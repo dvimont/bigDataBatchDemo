@@ -1,0 +1,26 @@
+syntax = "proto3";
+package wmf_pageviews;
+// [END declaration]
+
+// [START java_declaration]
+option java_package = "org.commonvox.bigdatademos";
+option java_outer_classname = "PageViewsPerHourProto";
+// [END java_declaration]
+
+
+message PageViewsPerHour {
+
+    message HourlyTimestamp {
+        int32 year = 1;
+        int32 month = 2;
+        int32 day = 3;
+        int32 hour = 4;
+    }
+
+    HourlyTimestamp hourlyTimestamp = 1;
+    // Note that the following adhere to Wikimedia naming standards
+    string domain_code = 2;
+    string page_title = 3;
+    int32 count_views = 4;
+    int32 total_response_size = 5;
+}
