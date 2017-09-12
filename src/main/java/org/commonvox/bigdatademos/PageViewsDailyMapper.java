@@ -23,7 +23,23 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
- *
+ * Records from Wikimedia hourly pageview summary files are structured as in
+ * the following example:
+ * 
+ * aa Main_Page 12 0
+ * 
+ * [domain code] + [webpage extension] + [pageviews] + [total response size]
+ * 
+ * The first two components are used to uniquely identify a page in the 
+ * Wikimedia collection of domains.
+ * 
+ * Output from this job consists of a key/value pair with the following:
+ * KEY: [yyyymmddhh] + [domain code] + [webpage extension]
+ * VALUE: [pageviews]
+ * 
+ * 
+ *    * the timestamp is parsed from inputted file name
+ * 
  * @author Daniel Vimont
  */
 public class PageViewsDailyMapper
@@ -33,9 +49,17 @@ public class PageViewsDailyMapper
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
 
+        // NOTE: Name of source file contains year-month-day string (yyyymmdd),
+        // which is prepended to the first two tokenizes string in each 
+        // inputted record [domain code + webpage extension]
+        
+        // Invoke Context#getInputSplit to get name of inputted file
         String sourceFile = ((FileSplit)context.getInputSplit()).getPath().getName();
+        // Filename contains yearMonthDay metadata.
         String yearMonthDay = sourceFile.substring(10, 18);
         String rawDataEntry = value.toString();
+        // Raw data entry format is:
+        //   [domain code] + [webpage extension] + [pageviews] + [total response size]
         String[] hourlyRecordComponents = rawDataEntry.split(" ");
 
         if (rawDataEntryIsValid(context, sourceFile, key, rawDataEntry, true)) {
