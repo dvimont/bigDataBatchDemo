@@ -1,6 +1,15 @@
 #!/bin/bash
 NUM_REDUCE_TASKS="3"
 
+echo "Removing existing HDFS test output"
+hadoop fs -rm -r /test/
+
+echo "Recreating test directory and subdirectories"
+hadoop fs -mkdir /test /test/raw_files
+
+echo "Copying Wikimedia test raw data to HDFS in 64MB blocks"
+hadoop fs -Ddfs.blocksize=67108864 -copyFromLocal ./workspace /test/raw_files/
+
 cd target
 export HADOOP_CLASSPATH=bigdatademo01-1.0-SNAPSHOT.jar
 
