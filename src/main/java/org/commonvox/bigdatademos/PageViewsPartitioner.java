@@ -15,30 +15,20 @@
  */
 package org.commonvox.bigdatademos;
 
-import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Partitioner;
 
 /**
- *
+ * Use #hashCode from key to send key/value pair to appropriate partition.
+ * 
  * @author Daniel Vimont
  */
-public class PageViewsReducer
-  extends Reducer<Text, IntWritable, Text, IntWritable> {
-    
-  public static final int NUM_REDUCE_TASKS = 3;
+public class PageViewsPartitioner extends Partitioner <Text, IntWritable> {
 
-  @Override
-  public void reduce(Text key, Iterable<IntWritable> values,
-      Context context)
-      throws IOException, InterruptedException {
-
-    int totalViews = 0;
-    for (IntWritable views : values) {
-      totalViews += views.get();
+    @Override
+    public int getPartition(Text key, IntWritable value, int numReduceTasks) {
+        return (numReduceTasks == 0) ? 0 : key.hashCode() % numReduceTasks;
     }
-
-    context.write(key, new IntWritable(totalViews));
-  }
+    
 }

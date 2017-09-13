@@ -41,6 +41,8 @@ public class PageViewsYearly {
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
     job.setMapperClass(PageViewsYearlyMapper.class);
+    job.setPartitionerClass(PageViewsPartitioner.class);
+    job.setNumReduceTasks(PageViewsReducer.NUM_REDUCE_TASKS);
     job.setReducerClass(PageViewsReducer.class);
 
     job.setOutputKeyClass(Text.class);

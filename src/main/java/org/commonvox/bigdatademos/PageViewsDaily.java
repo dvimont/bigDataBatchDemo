@@ -44,6 +44,8 @@ public class PageViewsDaily {
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         job.setMapperClass(PageViewsDailyMapper.class);
+        job.setPartitionerClass(PageViewsPartitioner.class);
+        job.setNumReduceTasks(PageViewsReducer.NUM_REDUCE_TASKS);
         job.setReducerClass(PageViewsReducer.class);
 
         job.setOutputKeyClass(Text.class);
