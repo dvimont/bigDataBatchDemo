@@ -42,14 +42,16 @@ public class PageViewsDaily {
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        int numReduceTasks = PageViewsReducer.NUM_REDUCE_TASKS;
+        int numReduceTasks = 0;
         if (args.length == 3) {
             numReduceTasks = Integer.valueOf(args[2]);
         }
 
         job.setMapperClass(PageViewsDailyMapper.class);
-        job.setPartitionerClass(PageViewsPartitioner.class);
-        job.setNumReduceTasks(numReduceTasks);
+        if (numReduceTasks > 0) {
+            job.setPartitionerClass(PageViewsPartitioner.class);
+            job.setNumReduceTasks(numReduceTasks);
+        }
         job.setReducerClass(PageViewsReducer.class);
 
         job.setOutputKeyClass(Text.class);
