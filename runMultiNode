@@ -1,5 +1,5 @@
 cd target
-# export HADOOP_CLASSPATH=bigdatademo01-1.0-SNAPSHOT.jar
+export HADOOP_CLASSPATH=bigdatademo01-1.0-SNAPSHOT.jar
 
 echo "STARTING PageViews mapreduce processing: " `date -u --rfc-822`
 
