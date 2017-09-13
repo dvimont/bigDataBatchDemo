@@ -1,5 +1,5 @@
 #!/bin/bash
-NUM_REDUCE_TASKS="3"
+NUM_REDUCE_TASKS=$1
 
 echo "Removing existing HDFS test output"
 hadoop fs -rm -r /test/
