@@ -1,23 +1,22 @@
+#!/bin/bash
+NUM_REDUCE_TASKS="3"
+
 cd target
 export HADOOP_CLASSPATH=bigdatademo01-1.0-SNAPSHOT.jar
 
 echo "STARTING PageViews mapreduce processing: " `date -u --rfc-822`
 
 echo "Running PageViewsDaily job: "  `date -u --rfc-822`
-# rm -rf /home/dv/hdfsData/pageviews/pageviews.daily > ../logs/pageviewsdailyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsDaily /test/raw_files/workspace /test/pageviews.daily >> ../logs/dailyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsDaily /test/raw_files/workspace /test/pageviews.daily $NUM_REDUCE_TASKS >> ../logs/dailyJob.log 2>&1
 
 echo "Running PageViewsWeekly job: " `date -u --rfc-822`
-# rm -rf /home/dv/hdfsData/pageviews/pageviews.weekly > ../logs/pageviewsweeklyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsWeekly /test/pageviews.daily /test/pageviews.weekly >> ../logs/weeklyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsWeekly /test/pageviews.daily /test/pageviews.weekly $NUM_REDUCE_TASKS >> ../logs/weeklyJob.log 2>&1
 
 echo "Running PageViewsMonthly job: " `date -u --rfc-822`
-# rm -rf /home/dv/hdfsData/pageviews/pageviews.monthly > ../logs/pageviewsmonthlyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsMonthly /test/pageviews.daily /test/pageviews.monthly >> ../logs/monthlyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsMonthly /test/pageviews.daily /test/pageviews.monthly $NUM_REDUCE_TASKS >> ../logs/monthlyJob.log 2>&1
 
 echo "Running PageViewsYearly job: " `date -u --rfc-822`
-# rm -rf /home/dv/hdfsData/pageviews/pageviews.yearly > ../logs/pageviewsyearlyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsYearly /test/pageviews.monthly /test/pageviews.yearly >> ../logs/yearlyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsYearly /test/pageviews.monthly /test/pageviews.yearly $NUM_REDUCE_TASKS >> ../logs/yearlyJob.log 2>&1
 
 echo "COMPLETED PageViews mapreduce processing: " `date -u --rfc-822`
 cd ..

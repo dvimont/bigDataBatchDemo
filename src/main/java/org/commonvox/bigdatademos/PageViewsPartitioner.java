@@ -28,7 +28,8 @@ public class PageViewsPartitioner extends Partitioner <Text, IntWritable> {
 
     @Override
     public int getPartition(Text key, IntWritable value, int numReduceTasks) {
-        return (numReduceTasks == 0) ? 0 : key.hashCode() % numReduceTasks;
+        return (numReduceTasks == 0) ?
+                0 : Math.abs(key.toString().hashCode() % numReduceTasks);
     }
     
 }

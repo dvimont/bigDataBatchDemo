@@ -5,19 +5,19 @@ echo "STARTING PageViews mapreduce processing: " `date -u --rfc-822`
 
 echo "Running PageViewsDaily job: "  `date -u --rfc-822`
 rm -rf /home/dv/hdfsData/pageviews/pageviews.daily > ../logs/pageviewsdailyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsDaily /home/dv/NetBeansProjects/bigdatademo01/workspace /home/dv/hdfsData/pageviews/pageviews.daily >> ../logs/pageviewsdailyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsDaily /home/dv/NetBeansProjects/bigdatademo01/workspace /home/dv/hdfsData/pageviews/pageviews.daily 0 >> ../logs/pageviewsdailyJob.log 2>&1
 
 echo "Running PageViewsWeekly job: " `date -u --rfc-822`
 rm -rf /home/dv/hdfsData/pageviews/pageviews.weekly > ../logs/pageviewsweeklyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsWeekly /home/dv/hdfsData/pageviews/pageviews.daily /home/dv/hdfsData/pageviews/pageviews.weekly >> ../logs/pageviewsweeklyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsWeekly /home/dv/hdfsData/pageviews/pageviews.daily /home/dv/hdfsData/pageviews/pageviews.weekly 0 >> ../logs/pageviewsweeklyJob.log 2>&1
 
 echo "Running PageViewsMonthly job: " `date -u --rfc-822`
 rm -rf /home/dv/hdfsData/pageviews/pageviews.monthly > ../logs/pageviewsmonthlyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsMonthly /home/dv/hdfsData/pageviews/pageviews.daily /home/dv/hdfsData/pageviews/pageviews.monthly >> ../logs/pageviewsmonthlyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsMonthly /home/dv/hdfsData/pageviews/pageviews.daily /home/dv/hdfsData/pageviews/pageviews.monthly 0 >> ../logs/pageviewsmonthlyJob.log 2>&1
 
 echo "Running PageViewsYearly job: " `date -u --rfc-822`
 rm -rf /home/dv/hdfsData/pageviews/pageviews.yearly > ../logs/pageviewsyearlyJob.log 2>&1
-hadoop org.commonvox.bigdatademos.PageViewsYearly /home/dv/hdfsData/pageviews/pageviews.monthly /home/dv/hdfsData/pageviews/pageviews.yearly >> ../logs/pageviewsyearlyJob.log 2>&1
+hadoop org.commonvox.bigdatademos.PageViewsYearly /home/dv/hdfsData/pageviews/pageviews.monthly /home/dv/hdfsData/pageviews/pageviews.yearly 0 >> ../logs/pageviewsyearlyJob.log 2>&1
 
 echo "COMPLETED PageViews mapreduce processing: " `date -u --rfc-822`
 cd ..
