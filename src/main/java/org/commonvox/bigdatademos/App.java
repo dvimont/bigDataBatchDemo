@@ -46,7 +46,7 @@ public class App
 //                "/home/dv/hdfsData/pageviews/pageviews.data", true, false, 0);
 //        MasterDatasetLoader.readMasterDataset("/home/dv/hdfsData/pageviews/pageviews.data", 10);
 
-        WikimediaFileDownloader.downloadRawDataFiles(WikimediaFileDownloader.FIXED_SAMPLE, 0);
+   //     WikimediaFileDownloader.downloadRawDataFiles(WikimediaFileDownloader.FIXED_SAMPLE, 0);
 
 
         // NOTE that WikiMediaFileConsolidator is no longer used!

@@ -15,11 +15,16 @@
  */
 package org.commonvox.bigdatademos;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +41,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+// import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -54,21 +63,40 @@ public class WikimediaFileDownloader {
 
     public static final String FIXED_SAMPLE = "fixed_sample";
     public static final String[] FIXED_SAMPLE_FILES =
-            {
-                // files from different hours in same day
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160701-110000.gz",
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160701-140000.gz",
-                // files from same week as above, different day
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160702-110000.gz",
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160702-140000.gz",
-                // files from same month as above, different week
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160729-110000.gz",
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160729-140000.gz",
-                // files from same year as above, different month
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-09/pageviews-20160929-110000.gz",
-                "https://dumps.wikimedia.org/other/pageviews/2016/2016-09/pageviews-20160929-140000.gz",
-            };
+        {
+            // files from different hours in same day
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160701-110000.gz",
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160701-140000.gz",
+            // files from same week as above, different day
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160702-110000.gz",
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160702-140000.gz",
+            // files from same month as above, different week
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160729-110000.gz",
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-07/pageviews-20160729-140000.gz",
+            // files from same year as above, different month
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-09/pageviews-20160929-110000.gz",
+            "https://dumps.wikimedia.org/other/pageviews/2016/2016-09/pageviews-20160929-140000.gz",
+        };
+    public static final String HDFS_RAW_DATA_DIRECTORY = "/test/raw_files";
 
+    public static void main( String[] args ) throws Exception {
+        System.out.println("YEP");
+
+        String filePath = null;
+        int processingLimit = 0;
+        if (args.length > 0) {
+            if (args[0].toLowerCase().equals("sample")) {
+                filePath = WikimediaFileDownloader.FIXED_SAMPLE;
+            } else {
+                filePath = args[0];
+                if (args.length > 1) {
+                    processingLimit = Integer.valueOf(args[1]);
+                }
+            }
+        }
+        downloadRawDataFiles(filePath, processingLimit);
+    }    
+    
     public static void downloadRawDataFiles(String urlString, int processingLimit)
             throws NoSuchAlgorithmException, KeyManagementException, IOException {
         if (urlString == null) {
@@ -84,6 +112,11 @@ public class WikimediaFileDownloader {
                     + "list of downloadable raw data files!");
             pageviewFileUrlStrings = getPageviewFileUrlStrings(urlString);
         }
+        
+        //Get configuration of Hadoop system
+        Configuration conf = new Configuration();
+        System.out.println("Connecting to -- " + conf.get("fs.defaultFS") +
+                " for copying downloaded files to HDFS.");
 
         System.out.println("=================");
         System.out.println("Number of pageview files on remote server == " + pageviewFileUrlStrings.size());
@@ -91,8 +124,11 @@ public class WikimediaFileDownloader {
         int processingCount = 0;
         for (String pageviewFileUrlString : pageviewFileUrlStrings) {
             System.out.println("Copying file from URL: " + pageviewFileUrlString);
-            copyRemoteFile(pageviewFileUrlString);
-            System.out.println("Copying COMPLETED!!");
+            Path newLocalFile = copyRemoteFile(pageviewFileUrlString);
+            System.out.println("Copying downloaded file into HDFS");
+            copyLocalFileToHDFS(newLocalFile, conf);
+            System.out.println("Deleting originally downloaded file");
+            Files.delete(newLocalFile);
             if (processingLimit > 0 && ++processingCount >= processingLimit) {
                 break;
             }
@@ -139,7 +175,7 @@ public class WikimediaFileDownloader {
         }
     }
 
-    private static void copyRemoteFile(String urlString)
+    private static Path copyRemoteFile(String urlString)
             throws IOException, NoSuchAlgorithmException, KeyManagementException {
         URL url = new URL(urlString);
         Path targetPath = Paths.get(
@@ -150,6 +186,28 @@ public class WikimediaFileDownloader {
         {
             Files.copy(inputStream, targetPath, REPLACE_EXISTING);
         }
+        return targetPath;
+    }
+
+    private static void copyLocalFileToHDFS(Path localFilePath, Configuration conf)
+            throws FileNotFoundException, IOException {
+        //Input stream for the file in local file system to be written to HDFS
+        InputStream in =
+                new BufferedInputStream(new FileInputStream(localFilePath.toFile()));
+        //Destination file in HDFS
+        String targetHdfsFile = HDFS_RAW_DATA_DIRECTORY + localFilePath.getFileName();
+        FileSystem fs = FileSystem.get(URI.create(targetHdfsFile), conf);
+        org.apache.hadoop.fs.Path targetHdfsPath =
+                new org.apache.hadoop.fs.Path(targetHdfsFile);
+        // Set outputStream with 64MB blocks (Wikimedia files < 64MB)
+        OutputStream outStream = fs.create(targetHdfsPath, true, 4096,
+                (short)conf.getInt("dfs.replication", 3), 67108864);
+        //Copy file from local to HDFS
+        IOUtils.copyBytes(in, outStream, 4096, true);
+        
+        // NOTE that #moveFromLocalFile does not seem to allow control over blockSize
+        //   fs.moveFromLocalFile( 
+        //              new org.apache.hadoop.fs.Path(localFilePath.toUri()), targetHdfsPath);
     }
 
     private static HttpsURLConnection getConnectionToServerWithBadSslCertificate(URL url)
@@ -190,18 +248,19 @@ public class WikimediaFileDownloader {
         return conn;
     }
 
-    // WOW!! WikiMedia's SSL certificate is apparently expired. Invoking the following
-    //  results in a javax.net.ssl.SSLHandshakeException being thrown!
-    //  Workaround for this found here:
-    //    https://javaskeleton.blogspot.com/2011/01/avoiding-sunsecurityvalidatorvalidatore.html
-    private void copyRemoteFileThrowsSslException() throws IOException {
-        String urlString = WIKIMEDIA_PAGEVIEW_FILES_DIRECTORY_URL;
-        Path targetPath = Paths.get(WORKSPACE_PATH_PREFIX_STRING + Paths.get(urlString).getFileName().toString());
-
-        URL url = new URL(urlString);
-        try ( InputStream inputStream = url.openStream() )
-        {
-            Files.copy(inputStream, targetPath);
-        }
-    }
+//    // WOW!! WikiMedia's SSL certificate is apparently expired. Invoking the following
+//    //  results in a javax.net.ssl.SSLHandshakeException being thrown!
+//    //  Workaround for this found here:
+//    //    https://javaskeleton.blogspot.com/2011/01/avoiding-sunsecurityvalidatorvalidatore.html
+//    private void copyRemoteFileThrowsSslException() throws IOException {
+//        String urlString = WIKIMEDIA_PAGEVIEW_FILES_DIRECTORY_URL;
+//        Path targetPath = Paths.get(WORKSPACE_PATH_PREFIX_STRING + Paths.get(urlString).getFileName().toString());
+//
+//        URL url = new URL(urlString);
+//        try ( InputStream inputStream = url.openStream() )
+//        {
+//            Files.copy(inputStream, targetPath);
+//        }
+//    }
+    
 }
