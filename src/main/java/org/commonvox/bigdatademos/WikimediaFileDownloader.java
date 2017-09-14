@@ -77,7 +77,7 @@ public class WikimediaFileDownloader {
             "https://dumps.wikimedia.org/other/pageviews/2016/2016-09/pageviews-20160929-110000.gz",
             "https://dumps.wikimedia.org/other/pageviews/2016/2016-09/pageviews-20160929-140000.gz",
         };
-    public static final String HDFS_RAW_DATA_DIRECTORY = "/test/raw_files";
+    public static final String HDFS_RAW_DATA_DIRECTORY = "/test/raw_files/";
 
     public static void main( String[] args ) throws Exception {
         System.out.println("YEP");
