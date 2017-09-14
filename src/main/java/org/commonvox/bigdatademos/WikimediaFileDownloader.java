@@ -16,6 +16,7 @@
 package org.commonvox.bigdatademos;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -72,7 +73,7 @@ public class WikimediaFileDownloader {
 
     public static void main( String[] args ) throws Exception {
         System.out.println("YEP");
-
+        new File("/raw_files").mkdirs();
         String filePath = null;
         int processingLimit = 0;
         if (args.length > 0) {
