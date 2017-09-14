@@ -15,16 +15,11 @@
  */
 package org.commonvox.bigdatademos;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,10 +36,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-// import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -113,10 +104,10 @@ public class WikimediaFileDownloader {
             pageviewFileUrlStrings = getPageviewFileUrlStrings(urlString);
         }
         
-        //Get configuration of Hadoop system
-        Configuration conf = new Configuration();
-        System.out.println("Connecting to -- " + conf.get("fs.defaultFS") +
-                " for copying downloaded files to HDFS.");
+//        //Get configuration of Hadoop system
+//        Configuration conf = new Configuration();
+//        System.out.println("Connecting to -- " + conf.get("fs.defaultFS") +
+//                " for copying downloaded files to HDFS.");
 
         System.out.println("=================");
         System.out.println("Number of pageview files on remote server == " + pageviewFileUrlStrings.size());
@@ -125,10 +116,10 @@ public class WikimediaFileDownloader {
         for (String pageviewFileUrlString : pageviewFileUrlStrings) {
             System.out.println("Copying file from URL: " + pageviewFileUrlString);
             Path newLocalFile = copyRemoteFile(pageviewFileUrlString);
-            System.out.println("Copying downloaded file into HDFS");
-            copyLocalFileToHDFS(newLocalFile, conf);
-            System.out.println("Deleting originally downloaded file");
-            Files.delete(newLocalFile);
+//            System.out.println("Copying downloaded file into HDFS");
+//            copyLocalFileToHDFS(newLocalFile, conf);
+//            System.out.println("Deleting originally downloaded file");
+//            Files.delete(newLocalFile);
             if (processingLimit > 0 && ++processingCount >= processingLimit) {
                 break;
             }
@@ -189,27 +180,27 @@ public class WikimediaFileDownloader {
         return targetPath;
     }
 
-    private static void copyLocalFileToHDFS(Path localFilePath, Configuration conf)
-            throws FileNotFoundException, IOException {
-        //Input stream for the file in local file system to be written to HDFS
-        InputStream in =
-                new BufferedInputStream(new FileInputStream(localFilePath.toFile()));
-        //Destination file in HDFS
-        String targetHdfsFile = HDFS_RAW_DATA_DIRECTORY + localFilePath.getFileName();
-        FileSystem fs = FileSystem.get(URI.create(targetHdfsFile), conf);
-        org.apache.hadoop.fs.Path targetHdfsPath =
-                new org.apache.hadoop.fs.Path(targetHdfsFile);
-        // Set outputStream with 64MB blocks (Wikimedia files < 64MB)
-        OutputStream outStream = fs.create(targetHdfsPath, true, 4096,
-                (short)conf.getInt("dfs.replication", 3), 67108864);
-        //Copy file from local to HDFS
-        IOUtils.copyBytes(in, outStream, 4096, true);
-        
-        // NOTE that #moveFromLocalFile does not seem to allow control over blockSize
-        //   fs.moveFromLocalFile( 
-        //              new org.apache.hadoop.fs.Path(localFilePath.toUri()), targetHdfsPath);
-    }
-
+//    private static void copyLocalFileToHDFS(Path localFilePath, Configuration conf)
+//            throws FileNotFoundException, IOException {
+//        //Input stream for the file in local file system to be written to HDFS
+//        InputStream in =
+//                new BufferedInputStream(new FileInputStream(localFilePath.toFile()));
+//        //Destination file in HDFS
+//        String targetHdfsFile = HDFS_RAW_DATA_DIRECTORY + localFilePath.getFileName();
+//        FileSystem fs = FileSystem.get(URI.create(targetHdfsFile), conf);
+//        org.apache.hadoop.fs.Path targetHdfsPath =
+//                new org.apache.hadoop.fs.Path(targetHdfsFile);
+//        // Set outputStream with 64MB blocks (Wikimedia files < 64MB)
+//        OutputStream outStream = fs.create(targetHdfsPath, true, 4096,
+//                (short)conf.getInt("dfs.replication", 3), 67108864);
+//        //Copy file from local to HDFS
+//        IOUtils.copyBytes(in, outStream, 4096, true);
+//        
+//        // NOTE that #moveFromLocalFile does not seem to allow control over blockSize
+//        //   fs.moveFromLocalFile( 
+//        //              new org.apache.hadoop.fs.Path(localFilePath.toUri()), targetHdfsPath);
+//    }
+//
     private static HttpsURLConnection getConnectionToServerWithBadSslCertificate(URL url)
             throws NoSuchAlgorithmException, KeyManagementException,
             MalformedURLException, IOException {
