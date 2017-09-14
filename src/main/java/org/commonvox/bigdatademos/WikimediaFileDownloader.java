@@ -50,7 +50,7 @@ public class WikimediaFileDownloader {
     public static final String DIRECTORY_2015_EXTENSION = "2015/";
     public static final String DIRECTORY_2016_EXTENSION = "2016/";
     public static final String DIRECTORY_2017_EXTENSION = "2017/";
-    public static final String WORKSPACE_PATH_PREFIX_STRING = "./workspace/";
+    public static final String WORKSPACE_PATH_PREFIX_STRING = "./raw_files/";
 
     public static final String FIXED_SAMPLE = "fixed_sample";
     public static final String[] FIXED_SAMPLE_FILES =
