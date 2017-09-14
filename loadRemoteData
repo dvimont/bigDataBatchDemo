@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROCESSING_LIMIT=3
+PROCESSING_LIMIT=2
 
 echo "Removing existing HDFS test output"
 hadoop fs -rm -r /test/
