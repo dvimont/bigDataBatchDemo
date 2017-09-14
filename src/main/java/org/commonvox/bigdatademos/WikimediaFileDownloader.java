@@ -105,11 +105,6 @@ public class WikimediaFileDownloader {
             pageviewFileUrlStrings = getPageviewFileUrlStrings(urlString);
         }
         
-//        //Get configuration of Hadoop system
-//        Configuration conf = new Configuration();
-//        System.out.println("Connecting to -- " + conf.get("fs.defaultFS") +
-//                " for copying downloaded files to HDFS.");
-
         System.out.println("=================");
         System.out.println("Number of pageview files on remote server == " + pageviewFileUrlStrings.size());
         System.out.println("** Commencing remote copy of WikiMedia raw data files with processingLimit == " + processingLimit);
@@ -117,10 +112,6 @@ public class WikimediaFileDownloader {
         for (String pageviewFileUrlString : pageviewFileUrlStrings) {
             System.out.println("Copying file from URL: " + pageviewFileUrlString);
             Path newLocalFile = copyRemoteFile(pageviewFileUrlString);
-//            System.out.println("Copying downloaded file into HDFS");
-//            copyLocalFileToHDFS(newLocalFile, conf);
-//            System.out.println("Deleting originally downloaded file");
-//            Files.delete(newLocalFile);
             if (processingLimit > 0 && ++processingCount >= processingLimit) {
                 break;
             }
