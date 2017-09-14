@@ -20,7 +20,7 @@ rm ./logs/hdfs_move.log
 for i in {1..9}
 do
    echo "Processing 2015 month $i"
-   mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/2015/2015-0$i 3" >> ./logs/download.log
+   mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/2015/2015-0$i/ 3" >> ./logs/download.log
    hadoop fs -moveFromLocal ./raw_files/ /test >> ./logs/hdfs_move.log
 done
 
