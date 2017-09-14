@@ -7,10 +7,11 @@ hadoop fs -rm -r /test/
 echo "Recreating test directory and subdirectories"
 hadoop fs -mkdir /test /test/raw_files
 
-cd target
-
 echo "STARTING download from Wikimedia and load inth HDFS" `date -u --rfc-822`
-java -classpath bigdatademo01-1.0-SNAPSHOT.jar org.commonvox.bigdatademos.WikimediaFileDownloader sample >> ../logs/downloadWikimediaFiles.log 2>&1
+java -cp target/bigdatademo01-1.0-SNAPSHOT.jar org.commonvox.bigdatademos.WikimediaFileDownloader sample > loaderLog.txt 2>&1
+
+#mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="sample"
+#java -classpath bigdatademo01-1.0-SNAPSHOT.jar org.commonvox.bigdatademos.WikimediaFileDownloader sample >> ./logs/downloadWikimediaFiles.log 2>&1
 
 echo "COMPLETED download processing: " `date -u --rfc-822`
 cd ..
