@@ -12,8 +12,8 @@ echo "STARTING download from Wikimedia and load inth HDFS" `date -u --rfc-822`
 # mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="sample" > ./logs/download.log
 # following classpath missing hadoop, easier to let Maven exec take care of things -- java -classpath bigdatademo01-1.0-SNAPSHOT.jar org.commonvox.bigdatademos.WikimediaFileDownloader sample >> ./logs/downloadWikimediaFiles.log 2>&1
 
-rm -r ./raw_files
-mkdir raw_files
+# rm -r ./raw_files
+# mkdir raw_files
 rm ./logs/download.log
 rm ./logs/hdfs_move.log
 
