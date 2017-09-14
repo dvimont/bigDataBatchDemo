@@ -28,6 +28,24 @@ do
    mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/2015/2015-$i/ $PROCESSING_LIMIT" >> ./logs/download.log
    hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
 done
+for i in {1..9}
+do
+   echo "Processing 2016 month $i"
+   mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/2016/2016-0$i/ $PROCESSING_LIMIT" >> ./logs/download.log
+   hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+done
+for i in {10..12}
+do
+   echo "Processing 2016 month $i"
+   mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/2016/2016-$i/ $PROCESSING_LIMIT" >> ./logs/download.log
+   hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+done
+for i in {1..9}
+do
+   echo "Processing 2017 month $i"
+   mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/2017/2017-0$i/ $PROCESSING_LIMIT" >> ./logs/download.log
+   hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+done
 
 echo "COMPLETED download processing: " `date -u --rfc-822`
 cd ..
