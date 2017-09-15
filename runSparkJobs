@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
+
+echo "Running PageViewsDaily job: "  `date -u --rfc-822`
+#example execution from Learning Spark book
+$SPARK_HOME/bin/spark-submit \
+  --class org.commonvox.bigdatademos.SparkDriver \
+  ./target/bigdatademo01-1.0-SNAPSHOT.jar \
+  test/raw_files test/pageviews.daily  # input and output HDFS files 
+
+echo "Running PageViewsWeekly job: " `date -u --rfc-822`
+
+echo "Running PageViewsMonthly job: " `date -u --rfc-822`
+
+echo "Running PageViewsYearly job: " `date -u --rfc-822`
+
+echo "COMPLETED PageViews Spark processing: " `date -u --rfc-822`
+cd ..

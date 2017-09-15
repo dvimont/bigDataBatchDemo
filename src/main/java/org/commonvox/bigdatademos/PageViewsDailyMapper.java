@@ -50,7 +50,7 @@ public class PageViewsDailyMapper
         throws IOException, InterruptedException {
 
         // NOTE: Name of source file contains year-month-day string (yyyymmdd),
-        // which is prepended to the first two tokenizes string in each 
+        // which is prepended to the first two tokenized strings in each 
         // inputted record [domain code + webpage extension]
         
         // Invoke Context#getInputSplit to get name of inputted file
@@ -62,7 +62,7 @@ public class PageViewsDailyMapper
         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
         String[] hourlyRecordComponents = rawDataEntry.split(" ");
 
-        if (rawDataEntryIsValid(context, sourceFile, key, rawDataEntry, true)) {
+        if (rawDataEntryIsValid(context, sourceFile, key.get(), rawDataEntry, true)) {
             String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
 
             context.write(new Text(yearMonthDayDomainCode + " " + hourlyRecordComponents[1]),
@@ -73,33 +73,43 @@ public class PageViewsDailyMapper
         }
     }
 
+    public static boolean rawDataEntryIsValid(String rawDataEntry) {
+        return rawDataEntryIsValid(null, null, 0, rawDataEntry, false);
+    }
+    
     private static boolean rawDataEntryIsValid(Context context, String sourceFile,
-            LongWritable key, String rawDataEntry, boolean verboseMode) {
+            long key, String rawDataEntry, boolean verboseMode) {
         if (rawDataEntry.contains("\t")) {
-            if (verboseMode) {
-                System.out.println(
-                        "** Encountered invalid entry CONTAINING TABS in file <" + sourceFile
-                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            if (context != null) {
+                if (verboseMode) {
+                    System.out.println(
+                            "** Encountered invalid entry CONTAINING TABS in file <" + sourceFile
+                            + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+                }
+                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_TABS).increment(1L);
             }
-            context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_TABS).increment(1L);
             return false;
         }
         String[] parsedData = rawDataEntry.split(" ");
         if (parsedData.length != 4) {
-            if (verboseMode) {
-                System.out.println("** Encountered invalid entry WITH <" + parsedData.length
-                        + "> SPACE-DELIMITED ELEMENTS (expected 4) in file <" + sourceFile
-                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            if (context != null) {
+                if (verboseMode) {
+                    System.out.println("** Encountered invalid entry WITH <" + parsedData.length
+                            + "> SPACE-DELIMITED ELEMENTS (expected 4) in file <" + sourceFile
+                            + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+                }
             }
             return false;
         }
         if (!isIntegerValue(parsedData[2])) {
-            if (verboseMode) {
-                System.out.println("** Encountered invalid raw-data line WITH INVALID COUNT_VIEWS"
-                        + "VALUE OF <" + parsedData[2] + "> in file <" + sourceFile
-                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            if (context != null) {
+                if (verboseMode) {
+                    System.out.println("** Encountered invalid raw-data line WITH INVALID COUNT_VIEWS"
+                            + "VALUE OF <" + parsedData[2] + "> in file <" + sourceFile
+                            + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+                }
+                context.getCounter(PageViewsDaily.COUNTERS.NONINTEGER_COUNT_OF_VIEWS).increment(1L);
             }
-            context.getCounter(PageViewsDaily.COUNTERS.NONINTEGER_COUNT_OF_VIEWS).increment(1L);
             return false;
         }
         return true;

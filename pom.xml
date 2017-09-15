@@ -40,6 +40,13 @@
         <artifactId>hadoop-client</artifactId>
         <version>2.7.4</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-core_2.11 -->
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_2.11</artifactId>
+        <version>2.1.1</version>
+        <scope>provided</scope>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
     <dependency>
         <groupId>com.google.protobuf</groupId>
