@@ -36,22 +36,22 @@ import scala.Tuple2;
  */
 public class SparkDriver {
     
-    private static final String HDFS_NAMENODE =
-            "hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/";
+//    private static final String hdfsNamenode =
+//            "hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/";
 
     public static void main( String[] args ) throws Exception {
-        if (args.length < 2) {
-          System.err.println("Usage: PageViewsDaily <input path> <output path>");
+        if (args.length < 3) {
+          System.err.println("Usage: PageViewsDaily <hdfs-master url> <input path> <output path>");
           System.exit(-1);
         }
-        String inputHdfsFile = args[0];
-        String outputHdfsFile = args[1];
+        String hdfsNamenode = args[0];
+        String inputHdfsFile = args[1];
+        String outputHdfsFile = args[2];
         
         SparkConf conf = new SparkConf().setAppName("PageViewsDaily");
         JavaSparkContext sc = new JavaSparkContext(conf);
         JavaNewHadoopRDD<LongWritable, Text> hadoopRDD = 
-             (JavaNewHadoopRDD) sc.newAPIHadoopFile(
-                HDFS_NAMENODE +
+             (JavaNewHadoopRDD) sc.newAPIHadoopFile(hdfsNamenode +
                         inputHdfsFile,  // e.g. "test/raw_files", 
                 TextInputFormat.class,  // format of the inputted file data
                 LongWritable.class,     // key class
@@ -62,7 +62,7 @@ public class SparkDriver {
                 hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true);
 
         // Output result to HDFS 
-        pageViewsDaily.saveAsTextFile(HDFS_NAMENODE + outputHdfsFile); // "test/pageviews.daily");
+        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputHdfsFile); // "test/pageviews.daily");
     
     }
     
