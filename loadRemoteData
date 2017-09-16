@@ -3,7 +3,7 @@
 # setting limit to 0 == no limit
 PROCESSING_LIMIT=$1
 
-echo "Removing existing HDFS test output"
+echo "Removing existing HDFS test data"
 hadoop fs -rm -r /test/
 
 echo "Recreating test directory and subdirectories"
