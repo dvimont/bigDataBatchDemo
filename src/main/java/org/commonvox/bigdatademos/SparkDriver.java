@@ -26,10 +26,8 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaNewHadoopRDD;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 /**
@@ -62,15 +60,17 @@ public class SparkDriver {
                 Text.class,             // value class
                 new Configuration()     // hadoop config
         );
-//        JavaRDD<Tuple2<String, Integer>> pageViewsDaily =
-//                hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true);
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true)
                         .mapToPair(tuple -> tuple)
-                        .reduceByKey((a, b) -> a + b);
+                        .reduceByKey((a, b) -> a + b)
+                .sortByKey(); // temp sort for testing
         
         // Output result to HDFS 
         pageViewsDaily.saveAsTextFile(hdfsNamenode + outputHdfsFile); // "test/pageviews.daily");
+        
+//        JavaPairRDD<String, Integer> pageViewsWeekly =
+//                pageViewsDaily.mapToPair(PairFunction);
     }
     
     static class DailyMapper implements Function2<InputSplit,
@@ -125,14 +125,5 @@ public class SparkDriver {
                 }
             };
        }
-    }
-    
-    static class DailyPairer implements PairFunction<Tuple2<String, Integer>,String,Integer> {
-
-        @Override
-        public Tuple2<String, Integer> call(Tuple2<String, Integer> t) throws Exception {
-            return t;
-        }
-        
     }
 }
