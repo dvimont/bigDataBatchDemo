@@ -15,9 +15,11 @@
  */
 package org.commonvox.bigdatademos;
 
+import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -28,6 +30,7 @@ import org.apache.spark.api.java.JavaNewHadoopRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 /**
@@ -40,15 +43,23 @@ public class SparkDriver {
 //            "hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/";
 
     private static int displayCount = 0;
+    private static final DailyMapper DAILY_MAPPER = new DailyMapper();
+    private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
     
     public static void main( String[] args ) throws Exception {
-        if (args.length < 3) {
-          System.err.println("Usage: PageViewsDaily <hdfs-master url> <input path> <output path>");
+        if (args.length < 6) {
+          System.err.println(
+                  "Usage: PageViewsDaily <hdfs-master url> <input path> "
+                          + "<daily output path> <weekly output path> "
+                          + "<monthly output path> <yearly output path>");
           System.exit(-1);
         }
         String hdfsNamenode = args[0];
         String inputHdfsFile = args[1];
-        String outputHdfsFile = args[2];
+        String outputDailyHdfsFile = args[2];
+        String outputWeeklyHdfsFile = args[3];
+        String outputMonthlyHdfsFile = args[4];
+        String outputYearlyHdfsFile = args[5];
         
         SparkConf conf = new SparkConf().setAppName("PageViewsDaily");
         JavaSparkContext sc = new JavaSparkContext(conf);
@@ -61,16 +72,17 @@ public class SparkDriver {
                 new Configuration()     // hadoop config
         );
         JavaPairRDD<String, Integer> pageViewsDaily =
-                hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true)
+                hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                        .reduceByKey((a, b) -> a + b)
-                .sortByKey(); // temp sort for testing
+                        .reduceByKey((a, b) -> a + b);
         
-        // Output result to HDFS 
-        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputHdfsFile); // "test/pageviews.daily");
+        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
         
-//        JavaPairRDD<String, Integer> pageViewsWeekly =
-//                pageViewsDaily.mapToPair(PairFunction);
+        JavaPairRDD<String, Integer> pageViewsWeekly = 
+                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
+                        .reduceByKey((a, b) -> a + b);
+        
+        pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
     }
     
     static class DailyMapper implements Function2<InputSplit,
@@ -126,4 +138,30 @@ public class SparkDriver {
             };
        }
     }
+     static class WeeklyMapper
+             implements PairFunction<Tuple2<String, Integer>, String, Integer> {
+
+        @Override
+        public Tuple2<String, Integer> call(Tuple2<String, Integer> keyValuePair)
+                throws Exception {
+            String[] dailyKeyComponents = keyValuePair._1().split(" ");
+            // Note that the common key for all days in a given week is based on nearest preceding Sunday!!
+            LocalDate localDate = LocalDate.of(
+                    Integer.parseInt(dailyKeyComponents[0].substring(0, 4)),
+                    Integer.parseInt(dailyKeyComponents[0].substring(4, 6)),
+                    Integer.parseInt(dailyKeyComponents[0].substring(6, 8)));
+            int sundayOffset = localDate.getDayOfWeek().getValue() % 7;
+            String nearestPrecedingSunday = localDate.minusDays(sundayOffset).toString();
+            String yearMonthSundayDomainCode = nearestPrecedingSunday.substring(0, 4) +
+                    nearestPrecedingSunday.substring(5, 7) +
+                    nearestPrecedingSunday.substring(8, 10) +
+                    dailyKeyComponents[0].substring(8);
+
+            // Note that dailyKeyComponents[1] is the webpage title (Domain Code + webpage title uniquely identifies webpage),
+            //   and dailyKeyValuePair[1] is the daily count of views for the webpage.
+            return new Tuple2(yearMonthSundayDomainCode + " " + dailyKeyComponents[1], keyValuePair._2());
+        }
+         
+     }
+    
 }
