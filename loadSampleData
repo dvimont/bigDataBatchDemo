@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "Removing existing HDFS test data"
+hadoop fs -rm -r /test/
+
+echo "Recreating test directory and subdirectories"
+hadoop fs -mkdir /test /test/raw_files
+
+echo "STARTING sample download from Wikimedia and load into HDFS" `date -u --rfc-822`
+
+rm -r ./raw_files
+mkdir ./raw_files
+rm ./logs/download.log
+rm ./logs/hdfs_move.log
+
+echo "Processing $y month $m"
+mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$y/$y-0$m/ sample" >> ./logs/download.log
+hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+
+echo "COMPLETED sample download processing: " `date -u --rfc-822`
+cd ..

@@ -72,7 +72,6 @@ public class WikimediaFileDownloader {
     public static final String HDFS_RAW_DATA_DIRECTORY = "/test/raw_files/";
 
     public static void main( String[] args ) throws Exception {
-        System.out.println("YEP");
         new File("/raw_files").mkdirs();
         String filePath = null;
         int processingLimit = 0;
