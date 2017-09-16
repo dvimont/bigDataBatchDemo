@@ -10,7 +10,7 @@ echo "Running SparkDriver job: "  `date -u --rfc-822`
 $SPARK_HOME/bin/spark-submit \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
-  hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/ \
+  hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:9000/ \
   test/raw_files test/pageviews.daily  # input and output HDFS files 
 
 # echo "Running PageViewsWeekly job: " `date -u --rfc-822`
