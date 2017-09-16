@@ -87,16 +87,6 @@ public class SparkDriver {
             System.out.println("sourceFile is: " + sourceFile);
             System.out.println("yearMonthDay value is: " + yearMonthDay);
             
-//            while (keyValuePairs.hasNext()) {
-//                String rawDataEntry = keyValuePairs.next()._2().toString();
-//
-//                if (PageViewsDailyMapper.rawDataEntryIsValid(rawDataEntry)) {
-//                    // Raw data entry format is space-delimited:
-//                    //   [domain code] + [webpage extension] + [pageviews] + [total response size]
-//                    String[] hourlyRecordComponents = rawDataEntry.split(" ");
-//                    String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
-//                }
-//            }
             return new Iterator<Tuple2<String, Integer>>() {
                 @Override
                 public boolean hasNext() {
