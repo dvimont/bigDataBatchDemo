@@ -39,6 +39,8 @@ public class SparkDriver {
 //    private static final String hdfsNamenode =
 //            "hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/";
 
+    private static int displayCount = 0;
+    
     public static void main( String[] args ) throws Exception {
         if (args.length < 3) {
           System.err.println("Usage: PageViewsDaily <hdfs-master url> <input path> <output path>");
@@ -63,7 +65,7 @@ public class SparkDriver {
 
         // Output result to HDFS 
         pageViewsDaily.saveAsTextFile(hdfsNamenode + outputHdfsFile); // "test/pageviews.daily");
-    
+        System.out.println("*** JavaRDD outputted to HDFS");
     }
     
     static class DailyMapper implements Function2<InputSplit,
@@ -72,24 +74,29 @@ public class SparkDriver {
         public Iterator<Tuple2<String, Integer>> call(
                 InputSplit inputSplit, Iterator<Tuple2<LongWritable, Text>> keyValuePairs)
                 throws Exception {
+
+            System.out.println("DailyMapper processing is commencing!");
+
             // NOTE: Name of source file contains year-month-day string (yyyymmdd),
             // which will be prepended to the first two tokenized strings in each 
             // inputted record [domain code + webpage extension] to form outputtedKey
-
             final String sourceFile = ((FileSplit) inputSplit).getPath().getName();
             // Filename contains yearMonthDay metadata.
             String yearMonthDay = sourceFile.substring(10, 18);
             
-            while (keyValuePairs.hasNext()) {
-                String rawDataEntry = keyValuePairs.next()._2().toString();
-
-                if (PageViewsDailyMapper.rawDataEntryIsValid(rawDataEntry)) {
-                    // Raw data entry format is space-delimited:
-                    //   [domain code] + [webpage extension] + [pageviews] + [total response size]
-                    String[] hourlyRecordComponents = rawDataEntry.split(" ");
-                    String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
-                }
-            }
+            System.out.println("sourceFile is: " + sourceFile);
+            System.out.println("yearMonthDay value is: " + yearMonthDay);
+            
+//            while (keyValuePairs.hasNext()) {
+//                String rawDataEntry = keyValuePairs.next()._2().toString();
+//
+//                if (PageViewsDailyMapper.rawDataEntryIsValid(rawDataEntry)) {
+//                    // Raw data entry format is space-delimited:
+//                    //   [domain code] + [webpage extension] + [pageviews] + [total response size]
+//                    String[] hourlyRecordComponents = rawDataEntry.split(" ");
+//                    String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
+//                }
+//            }
             return new Iterator<Tuple2<String, Integer>>() {
                 @Override
                 public boolean hasNext() {
@@ -104,6 +111,9 @@ public class SparkDriver {
                     Integer outputtedValue = 0;
                     do {
                         String rawDataEntry = keyValuePairs.next()._2().toString();
+                        if (++displayCount < 20) {
+                            System.out.println("-- rawDataEntry: " + rawDataEntry);
+                        }
 
                         // Raw data entry format is space-delimited:
                         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
