@@ -19,7 +19,6 @@ import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -42,9 +41,11 @@ public class SparkDriver {
 //    private static final String hdfsNamenode =
 //            "hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/";
 
-    private static int displayCount = 0;
+//    private static int displayCount = 0;
     private static final DailyMapper DAILY_MAPPER = new DailyMapper();
     private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
+    private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
+    private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 6) {
@@ -83,6 +84,19 @@ public class SparkDriver {
                         .reduceByKey((a, b) -> a + b);
         
         pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
+        
+        JavaPairRDD<String, Integer> pageViewsMonthly = 
+                pageViewsDaily.mapToPair(MONTHLY_MAPPER)
+                        .reduceByKey((a, b) -> a + b);
+        
+        pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+        
+        JavaPairRDD<String, Integer> pageViewsYearly = 
+                pageViewsMonthly.mapToPair(YEARLY_MAPPER)
+                        .reduceByKey((a, b) -> a + b);
+        
+        pageViewsYearly.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
+        
     }
     
     static class DailyMapper implements Function2<InputSplit,
@@ -138,7 +152,8 @@ public class SparkDriver {
             };
        }
     }
-     static class WeeklyMapper
+    
+    static class WeeklyMapper
              implements PairFunction<Tuple2<String, Integer>, String, Integer> {
 
         @Override
@@ -158,10 +173,41 @@ public class SparkDriver {
                     dailyKeyComponents[0].substring(8);
 
             // Note that dailyKeyComponents[1] is the webpage title (Domain Code + webpage title uniquely identifies webpage),
-            //   and dailyKeyValuePair[1] is the daily count of views for the webpage.
+            //   and keyValuePair._2 is the daily count of views for the webpage.
             return new Tuple2(yearMonthSundayDomainCode + " " + dailyKeyComponents[1], keyValuePair._2());
         }
-         
      }
     
+    static class MonthlyMapper
+             implements PairFunction<Tuple2<String, Integer>, String, Integer> {
+
+        @Override
+        public Tuple2<String, Integer> call(Tuple2<String, Integer> keyValuePair)
+                throws Exception {
+            String[] dailyKeyComponents = keyValuePair._1().split(" ");
+            String yearMonthDomainCode =
+                    dailyKeyComponents[0].substring(0, 6) + dailyKeyComponents[0].substring(8);
+
+            // Note that keyComponents[1] is the webpage title 
+            //   (Domain Code + webpage title uniquely identifies webpage),
+            //   and keyValuePair._2 is the daily count of views for the webpage.
+            return new Tuple2(yearMonthDomainCode + " " + dailyKeyComponents[1], keyValuePair._2());
+        }
+     }
+    
+    static class YearlyMapper
+             implements PairFunction<Tuple2<String, Integer>, String, Integer> {
+
+        @Override
+        public Tuple2<String, Integer> call(Tuple2<String, Integer> keyValuePair)
+                throws Exception {
+            String[] monthlyKeyComponents = keyValuePair._1().split(" ");
+            String yearDomainCode = monthlyKeyComponents[0].substring(0, 4) +
+                    monthlyKeyComponents[0].substring(6);
+
+            // Note that keyComponents[1] is the webpage title (DomainCode + webpage title uniquely identifies webpage),
+            //   and keyValuePair._2 is the monthly count of views for the webpage.
+            return new Tuple2(yearDomainCode + " " + monthlyKeyComponents[1], keyValuePair._2());
+        }
+     }
 }
