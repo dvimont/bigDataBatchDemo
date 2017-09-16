@@ -25,9 +25,11 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaNewHadoopRDD;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 /**
@@ -60,12 +62,15 @@ public class SparkDriver {
                 Text.class,             // value class
                 new Configuration()     // hadoop config
         );
-        JavaRDD<Tuple2<String, Integer>> pageViewsDaily =
-                hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true);
-
+//        JavaRDD<Tuple2<String, Integer>> pageViewsDaily =
+//                hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true);
+        JavaPairRDD<String, Integer> pageViewsDaily =
+                hadoopRDD.mapPartitionsWithInputSplit(new DailyMapper(), true)
+                        .mapToPair(tuple -> tuple)
+                        .reduceByKey((a, b) -> a + b);
+        
         // Output result to HDFS 
         pageViewsDaily.saveAsTextFile(hdfsNamenode + outputHdfsFile); // "test/pageviews.daily");
-        System.out.println("*** JavaRDD outputted to HDFS");
     }
     
     static class DailyMapper implements Function2<InputSplit,
@@ -75,7 +80,7 @@ public class SparkDriver {
                 InputSplit inputSplit, Iterator<Tuple2<LongWritable, Text>> keyValuePairs)
                 throws Exception {
 
-            System.out.println("DailyMapper processing is commencing!");
+//            System.out.println("DailyMapper processing is commencing!");
 
             // NOTE: Name of source file contains year-month-day string (yyyymmdd),
             // which will be prepended to the first two tokenized strings in each 
@@ -84,8 +89,8 @@ public class SparkDriver {
             // Filename contains yearMonthDay metadata.
             String yearMonthDay = sourceFile.substring(10, 18);
             
-            System.out.println("sourceFile is: " + sourceFile);
-            System.out.println("yearMonthDay value is: " + yearMonthDay);
+//            System.out.println("sourceFile is: " + sourceFile);
+//            System.out.println("yearMonthDay value is: " + yearMonthDay);
             
             return new Iterator<Tuple2<String, Integer>>() {
                 @Override
@@ -101,9 +106,9 @@ public class SparkDriver {
                     Integer outputtedValue = 0;
                     do {
                         String rawDataEntry = keyValuePairs.next()._2().toString();
-                        if (++displayCount < 20) {
-                            System.out.println("-- rawDataEntry: " + rawDataEntry);
-                        }
+//                        if (++displayCount < 20) {
+//                            System.out.println("-- rawDataEntry: " + rawDataEntry);
+//                        }
 
                         // Raw data entry format is space-delimited:
                         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
@@ -120,5 +125,14 @@ public class SparkDriver {
                 }
             };
        }
+    }
+    
+    static class DailyPairer implements PairFunction<Tuple2<String, Integer>,String,Integer> {
+
+        @Override
+        public Tuple2<String, Integer> call(Tuple2<String, Integer> t) throws Exception {
+            return t;
+        }
+        
     }
 }

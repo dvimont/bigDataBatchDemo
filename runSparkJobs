@@ -14,11 +14,5 @@ $SPARK_HOME/bin/spark-submit \
   test/raw_files test/pageviews.daily > ./logs/spark_output.log  2>&1
   # final three parms == hdfs-url, input HDFS file, and output HDFS file 
 
-# echo "Running PageViewsWeekly job: " `date -u --rfc-822`
-
-# echo "Running PageViewsMonthly job: " `date -u --rfc-822`
-
-# echo "Running PageViewsYearly job: " `date -u --rfc-822`
-
 echo "COMPLETED PageViews Spark processing: " `date -u --rfc-822`
 cd ..
