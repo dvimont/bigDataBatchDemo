@@ -28,8 +28,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
  */
 public class PageViewsMonthly {
   public static void main(String[] args) throws Exception {
-    if (args.length < 2 || args.length > 3) {
-      System.err.println("Usage: PageViewsMonthly <input path> <output path> <optional numReduceTasks>");
+    if (args.length < 3) {
+      System.err.println("Usage: PageViewsMonthly <input path> <output path> <numReduceTasks>");
       System.exit(-1);
     }
 
@@ -39,10 +39,7 @@ public class PageViewsMonthly {
 
     FileInputFormat.addInputPath(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
-    int numReduceTasks = 0;
-    if (args.length == 3) {
-        numReduceTasks = Integer.valueOf(args[2]);
-    }
+    int numReduceTasks = Integer.valueOf(args[2]);
 
     job.setMapperClass(PageViewsMonthlyMapper.class);
     if (numReduceTasks > 0) {

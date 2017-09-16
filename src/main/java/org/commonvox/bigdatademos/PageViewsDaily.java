@@ -31,8 +31,8 @@ public class PageViewsDaily {
     public enum COUNTERS { GOOD, BAD, CONTAINS_TABS, NONINTEGER_COUNT_OF_VIEWS }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 3) {
-          System.err.println("Usage: PageViewsDaily <input path> <output path> <optional numReduceTasks>");
+        if (args.length < 3) {
+          System.err.println("Usage: PageViewsDaily <input path> <output path> <numReduceTasks>");
           System.exit(-1);
         }
 
@@ -42,10 +42,7 @@ public class PageViewsDaily {
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        int numReduceTasks = 0;
-        if (args.length == 3) {
-            numReduceTasks = Integer.valueOf(args[2]);
-        }
+        int numReduceTasks = Integer.valueOf(args[2]);
 
         job.setMapperClass(PageViewsDailyMapper.class);
         if (numReduceTasks > 0) {
