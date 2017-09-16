@@ -1,20 +1,23 @@
 #!/bin/bash
 
+echo "Removing existing HDFS pageview mapreduce output"
+hadoop fs -rm -r /test/pageviews.*
+
 echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
 
-echo "Running PageViewsDaily job: "  `date -u --rfc-822`
-#example execution from Learning Spark book
+echo "Running SparkDriver job: "  `date -u --rfc-822`
+# NOTE: this is customized from an example execution in Learning Spark book
 $SPARK_HOME/bin/spark-submit \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
   hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/ \
   test/raw_files test/pageviews.daily  # input and output HDFS files 
 
-echo "Running PageViewsWeekly job: " `date -u --rfc-822`
+# echo "Running PageViewsWeekly job: " `date -u --rfc-822`
 
-echo "Running PageViewsMonthly job: " `date -u --rfc-822`
+# echo "Running PageViewsMonthly job: " `date -u --rfc-822`
 
-echo "Running PageViewsYearly job: " `date -u --rfc-822`
+# echo "Running PageViewsYearly job: " `date -u --rfc-822`
 
 echo "COMPLETED PageViews Spark processing: " `date -u --rfc-822`
 cd ..
