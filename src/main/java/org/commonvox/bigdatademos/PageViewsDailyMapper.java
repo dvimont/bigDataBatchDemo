@@ -73,41 +73,51 @@ public class PageViewsDailyMapper
         }
     }
 
-    public static boolean rawDataEntryIsValid(String rawDataEntry) {
-        return rawDataEntryIsValid(null, null, 0, rawDataEntry, false);
+    public static boolean rawDataEntryIsValid(
+            String sourceFile, String rawDataEntry, boolean verboseMode) {
+        return rawDataEntryIsValid(null, sourceFile, 0, rawDataEntry, false);
     }
     
     private static boolean rawDataEntryIsValid(Context context, String sourceFile,
             long key, String rawDataEntry, boolean verboseMode) {
         if (rawDataEntry.contains("\t")) {
+            if (verboseMode) {
+                System.out.println(
+                        "** Encountered invalid entry CONTAINING TAB(s) in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            }
             if (context != null) {
-                if (verboseMode) {
-                    System.out.println(
-                            "** Encountered invalid entry CONTAINING TABS in file <" + sourceFile
-                            + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
-                }
+                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_TABS).increment(1L);
+            }
+            return false;
+        }
+        if (rawDataEntry.contains(",")) {
+            if (verboseMode) {
+                System.out.println(
+                        "** Encountered invalid entry CONTAINING COMMA(s) in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            }
+            if (context != null) {
                 context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_TABS).increment(1L);
             }
             return false;
         }
         String[] parsedData = rawDataEntry.split(" ");
         if (parsedData.length != 4) {
-            if (context != null) {
-                if (verboseMode) {
-                    System.out.println("** Encountered invalid entry WITH <" + parsedData.length
-                            + "> SPACE-DELIMITED ELEMENTS (expected 4) in file <" + sourceFile
-                            + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
-                }
+            if (verboseMode) {
+                System.out.println("** Encountered invalid entry WITH <" + parsedData.length
+                        + "> SPACE-DELIMITED ELEMENTS (expected 4) in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
             }
             return false;
         }
         if (!isIntegerValue(parsedData[2])) {
+            if (verboseMode) {
+                System.out.println("** Encountered invalid raw-data line WITH INVALID COUNT_VIEWS"
+                        + "VALUE OF <" + parsedData[2] + "> in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            }
             if (context != null) {
-                if (verboseMode) {
-                    System.out.println("** Encountered invalid raw-data line WITH INVALID COUNT_VIEWS"
-                            + "VALUE OF <" + parsedData[2] + "> in file <" + sourceFile
-                            + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
-                }
                 context.getCounter(PageViewsDaily.COUNTERS.NONINTEGER_COUNT_OF_VIEWS).increment(1L);
             }
             return false;

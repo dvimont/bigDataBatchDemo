@@ -107,7 +107,8 @@ public class SparkDriver {
 
                         // Raw data entry format is space-delimited:
                         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
-                        if (PageViewsDailyMapper.rawDataEntryIsValid(rawDataEntry)) {
+                        if (PageViewsDailyMapper.rawDataEntryIsValid(
+                                sourceFile, rawDataEntry, true)) {
                             String[] hourlyRecordComponents = rawDataEntry.split(" ");
                             String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
                             outputtedKey = yearMonthDayDomainCode + " " + hourlyRecordComponents[1];
