@@ -28,7 +28,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
  * @author Daniel Vimont
  */
 public class PageViewsDaily {
-    public enum COUNTERS { GOOD, BAD, CONTAINS_TABS, CONTAINS_COMMAS, NONINTEGER_COUNT_OF_VIEWS }
+    public enum COUNTERS { GOOD, BAD, CONTAINS_TABS, NONINTEGER_COUNT_OF_VIEWS }
 
     public static void main(String[] args) throws Exception {
         if (args.length < 3) {

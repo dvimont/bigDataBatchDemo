@@ -91,17 +91,17 @@ public class PageViewsDailyMapper
             }
             return false;
         }
-        if (rawDataEntry.contains(",")) {
-            if (verboseMode) {
-                System.out.println(
-                        "** Encountered invalid entry CONTAINING COMMA(s) in file <" + sourceFile
-                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
-            }
-            if (context != null) {
-                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_COMMAS).increment(1L);
-            }
-            return false;
-        }
+//        if (rawDataEntry.contains(",")) {
+//            if (verboseMode) {
+//                System.out.println(
+//                        "** Encountered invalid entry CONTAINING COMMA(s) in file <" + sourceFile
+//                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+//            }
+//            if (context != null) {
+//                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_COMMAS).increment(1L);
+//            }
+//            return false;
+//        }
         String[] parsedData = rawDataEntry.split(" ");
         if (parsedData.length != 4) {
             if (verboseMode) {
