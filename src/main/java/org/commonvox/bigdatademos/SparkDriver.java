@@ -31,6 +31,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
 /**
@@ -78,7 +79,8 @@ public class SparkDriver {
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
                         .reduceByKey((a, b) -> a + b)
-                        .partitionBy(HASH_PARTITIONER);
+                        .partitionBy(HASH_PARTITIONER)
+                        .persist(StorageLevel.MEMORY_AND_DISK());
         
         pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
         
@@ -92,7 +94,8 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
                         .reduceByKey((a, b) -> a + b)
-                        .partitionBy(HASH_PARTITIONER);
+                        .partitionBy(HASH_PARTITIONER)
+                        .persist(StorageLevel.MEMORY_AND_DISK());
         
         pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
         
