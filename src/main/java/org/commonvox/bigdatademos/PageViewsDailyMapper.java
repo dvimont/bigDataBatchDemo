@@ -75,7 +75,7 @@ public class PageViewsDailyMapper
 
     public static boolean rawDataEntryIsValid(
             String sourceFile, String rawDataEntry, boolean verboseMode) {
-        return rawDataEntryIsValid(null, sourceFile, 0, rawDataEntry, false);
+        return rawDataEntryIsValid(null, sourceFile, 0, rawDataEntry, true);
     }
     
     private static boolean rawDataEntryIsValid(Context context, String sourceFile,
@@ -98,7 +98,7 @@ public class PageViewsDailyMapper
                         + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
             }
             if (context != null) {
-                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_TABS).increment(1L);
+                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_COMMAS).increment(1L);
             }
             return false;
         }
