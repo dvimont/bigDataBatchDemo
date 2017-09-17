@@ -48,22 +48,23 @@ public class SparkDriver {
     private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
-    private static final HashPartitioner HASH_PARTITIONER = new HashPartitioner(7);
+    private static HashPartitioner HASH_PARTITIONER;
     
     public static void main( String[] args ) throws Exception {
-        if (args.length < 6) {
+        if (args.length < 7) {
           System.err.println(
-                  "Usage: PageViewsDaily <hdfs-master url> <input path> "
+                  "Usage: PageViewsDaily <hdfs-master url> <partition-count> <input path> "
                           + "<daily output path> <weekly output path> "
                           + "<monthly output path> <yearly output path>");
           System.exit(-1);
         }
         String hdfsNamenode = args[0];
-        String inputHdfsFile = args[1];
-        String outputDailyHdfsFile = args[2];
-        String outputWeeklyHdfsFile = args[3];
-        String outputMonthlyHdfsFile = args[4];
-        String outputYearlyHdfsFile = args[5];
+        HASH_PARTITIONER = new HashPartitioner(Integer.valueOf(args[1]));
+        String inputHdfsFile = args[2];
+        String outputDailyHdfsFile = args[3];
+        String outputWeeklyHdfsFile = args[4];
+        String outputMonthlyHdfsFile = args[5];
+        String outputYearlyHdfsFile = args[6];
         
         SparkConf conf = new SparkConf().setAppName("PageViewsDaily");
         JavaSparkContext sc = new JavaSparkContext(conf);

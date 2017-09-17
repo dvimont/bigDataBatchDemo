@@ -11,9 +11,9 @@ $SPARK_HOME/bin/spark-submit \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
   hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:9000/ \
-  test/raw_files test/pageviews.daily test/pageviews.weekly \
+  6 test/raw_files test/pageviews.daily test/pageviews.weekly \
   test/pageviews.monthly test/pageviews.yearly > ./logs/spark_output.log  2>&1
-  # args after .jar above == hdfs-url, input HDFS file, and output daily, weekly, monthly, yearly HDFS files
+  # args after .jar above == hdfs-url, input HDFS file, nbr-partitions, & output daily, weekly, monthly, yearly HDFS files
 
 echo "COMPLETED PageViews Spark processing: " `date -u --rfc-822`
 cd ..
