@@ -78,31 +78,31 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                        .reduceByKey((a, b) -> a + b)
                         .partitionBy(HASH_PARTITIONER)
-                        .persist(StorageLevel.MEMORY_AND_DISK());
+                        .persist(StorageLevel.MEMORY_AND_DISK())
+                        .reduceByKey((a, b) -> a + b);
         
         pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
         
         JavaPairRDD<String, Integer> pageViewsWeekly = 
                 pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-                        .reduceByKey((a, b) -> a + b)
-                        .partitionBy(HASH_PARTITIONER);
+                        .partitionBy(HASH_PARTITIONER)
+                        .reduceByKey((a, b) -> a + b);
         
         pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-                        .reduceByKey((a, b) -> a + b)
                         .partitionBy(HASH_PARTITIONER)
-                        .persist(StorageLevel.MEMORY_AND_DISK());
+                        .persist(StorageLevel.MEMORY_AND_DISK())
+                        .reduceByKey((a, b) -> a + b);
         
         pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsYearly = 
                 pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-                        .reduceByKey((a, b) -> a + b)
-                        .partitionBy(HASH_PARTITIONER);
+                        .partitionBy(HASH_PARTITIONER)
+                        .reduceByKey((a, b) -> a + b);
         
         pageViewsYearly.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
