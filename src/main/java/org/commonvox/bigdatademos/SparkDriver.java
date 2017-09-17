@@ -24,6 +24,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.spark.HashPartitioner;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaNewHadoopRDD;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -46,6 +47,7 @@ public class SparkDriver {
     private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
+    private static final HashPartitioner HASH_PARTITIONER = new HashPartitioner(7);
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 6) {
@@ -75,25 +77,29 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                        .reduceByKey((a, b) -> a + b);
+                        .reduceByKey((a, b) -> a + b)
+                        .partitionBy(HASH_PARTITIONER);
         
         pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
         
         JavaPairRDD<String, Integer> pageViewsWeekly = 
                 pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-                        .reduceByKey((a, b) -> a + b);
+                        .reduceByKey((a, b) -> a + b)
+                        .partitionBy(HASH_PARTITIONER);
         
         pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-                        .reduceByKey((a, b) -> a + b);
+                        .reduceByKey((a, b) -> a + b)
+                        .partitionBy(HASH_PARTITIONER);
         
         pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsYearly = 
                 pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-                        .reduceByKey((a, b) -> a + b);
+                        .reduceByKey((a, b) -> a + b)
+                        .partitionBy(HASH_PARTITIONER);
         
         pageViewsYearly.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
