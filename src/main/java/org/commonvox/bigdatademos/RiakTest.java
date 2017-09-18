@@ -1,10 +1,3 @@
-
-import com.basho.riak.client.api.RiakClient;
-import com.basho.riak.client.core.RiakNode;
-import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
-
 /*
  * Copyright 2017 Daniel Vimont.
  *
@@ -20,6 +13,13 @@ import java.util.List;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.commonvox.bigdatademos;
+
+import com.basho.riak.client.api.RiakClient;
+import com.basho.riak.client.core.RiakNode;
+import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
