@@ -50,7 +50,12 @@ public class RiakTest {
         System.out.println("Shutting down client!");
         // NOTE: #shutdown may hang indefinitely:
         //   https://github.com/basho/riak-java-client/issues/706
-        myNodeClient.shutdown();
+//        myNodeClient.shutdown();
+        for (RiakNode node : riakNodes) {
+            System.out.println("Shutting down NODE: " + node.getRemoteAddress());
+            node.shutdown();
+        }
+
         
     }
 }
