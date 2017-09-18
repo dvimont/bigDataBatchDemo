@@ -45,8 +45,11 @@ public class RiakTest {
         for (RiakNode node : riakNodes) {
             System.out.println("Node address: " + node.getRemoteAddress());
             System.out.println("Node port: " + node.getPort());
+            System.out.println("Node state: " + node.getNodeState().toString());
         }
         System.out.println("Shutting down client!");
+        // NOTE: #shutdown may hang indefinitely:
+        //   https://github.com/basho/riak-java-client/issues/706
         myNodeClient.shutdown();
         
     }
