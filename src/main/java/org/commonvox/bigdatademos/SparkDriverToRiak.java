@@ -85,12 +85,19 @@ public class SparkDriverToRiak {
         
 //        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
 
-        JavaPairRDD<String, String> dailyPagesByPopularity =
+        JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
                 pageViewsDaily.mapToPair(
                         // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
+                        //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                         tuple -> new Tuple2<String, String>(
-                                tuple._1().substring(0, 8) + String.format("%09d", tuple._2()), tuple._1()))
-                        .sortByKey(false);
+                                tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
+                        .sortByKey(false)
+                        
+                        .mapToPair(
+                                // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
+                                tuple -> new Tuple2<String, String>(
+                                        tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+                        .groupByKey();
         
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
