@@ -87,18 +87,24 @@ public class SparkDriverToRiak {
         
 //        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
 
-        JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
-                pageViewsDaily.mapToPair(
-                        // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
-                        //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-                        tuple -> new Tuple2<String, String>(
-                                tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
+     //   JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
+        JavaPairRDD<String, String> dailyPagesByPopularity =
+                pageViewsDaily
+//                        // temporary filter for testing small amount of data
+//                        .filter(tuple -> tuple._1().substring(0, 8).equals("20160929"))
+                        .mapToPair(
+                            // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            tuple -> new Tuple2<String, String>(
+                                    tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
                         .sortByKey(false)
                         .mapToPair(
-                                // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
-                                tuple -> new Tuple2<String, String>(
-                                        tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                        .groupByKey().mapToPair(TRUNCATION_MAPPER);
+                            // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
+                            tuple -> new Tuple2<String, String>(
+                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+//                        .groupByKey()
+//                        .mapToPair(TRUNCATION_MAPPER)
+                ;
         
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
@@ -189,7 +195,7 @@ public class SparkDriverToRiak {
             LinkedList<String> shortenedList = new LinkedList<>();
             int count = 0;
             for (String item : keyValuePair._2()) {
-                if (count++ > 500) {
+                if (++count > 500) {
                     break;
                 }
                 shortenedList.add(item);
