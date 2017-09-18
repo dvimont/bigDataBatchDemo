@@ -18,9 +18,12 @@ package org.commonvox.bigdatademos;
 import com.basho.riak.client.api.RiakClient;
 import com.basho.riak.client.api.commands.buckets.FetchBucketProperties;
 import com.basho.riak.client.api.commands.buckets.StoreBucketProperties;
+import com.basho.riak.client.api.commands.kv.FetchValue;
+import com.basho.riak.client.api.commands.kv.StoreValue;
 import com.basho.riak.client.core.RiakNode;
 import com.basho.riak.client.core.operations.FetchBucketPropsOperation;
 import com.basho.riak.client.core.query.BucketProperties;
+import com.basho.riak.client.core.query.Location;
 import com.basho.riak.client.core.query.Namespace;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
@@ -46,22 +49,25 @@ public class RiakTest {
         ipAddresses.add("ec2-34-230-235-214.compute-1.amazonaws.com");
         ipAddresses.add("ec2-34-197-52-251.compute-1.amazonaws.com");
         System.out.println("About to instantiate RiakClient! Could throw UnknownHostException!!");
-        RiakClient myNodeClient = RiakClient.newClient(8087, ipAddresses);
+        RiakClient riakClient = RiakClient.newClient(8087, ipAddresses);
         
-        List<RiakNode> riakNodes = myNodeClient.getRiakCluster().getNodes();
+        List<RiakNode> riakNodes = riakClient.getRiakCluster().getNodes();
         for (RiakNode node : riakNodes) {
             System.out.println("Node address: " + node.getRemoteAddress());
             System.out.println("Node port: " + node.getPort());
             System.out.println("Node state: " + node.getNodeState().toString());
         }
         
+        String bucketName = "TestBucket";
         System.out.println("Creating bucket");
-        createBucket(myNodeClient, "TestBucket");
+        createBucket(riakClient, bucketName);
         
-        String myData = "This is my data";
-//        Bucket myBucket = myNodeClient..fetchBucket("TestBucket").execute();
-//        myBucket.store("TestKey", myData).execute();
+        String key = "TestKey";
+        System.out.println("Storing test key-value pair!");
+        storeKeyValuePair(riakClient, bucketName, key, "TestValue");
         
+        System.out.println("Reading the key-value pair!");
+        readByKey(riakClient, bucketName, key);
         
         System.out.println("Shutting down client!");
         // NOTE: #shutdown may hang indefinitely:
@@ -69,13 +75,14 @@ public class RiakTest {
 //        myNodeClient.shutdown();
         for (RiakNode node : riakNodes) {
             System.out.println("Shutting down NODE: " + node.getRemoteAddress());
-            node.shutdown();
+            node.shutdown(); // shutdown of final node may hang forever!! (see above link)
         }
       
         
     }
     
-    static void createBucket (RiakClient riakClient, String bucketName) throws ExecutionException, InterruptedException {
+    static void createBucket (RiakClient riakClient, String bucketName) 
+            throws ExecutionException, InterruptedException {
        Namespace ns = new Namespace(bucketName);
 
         // If the bucket does not exist in Riak, it will be created with the default properties when you query for them. 
@@ -99,4 +106,29 @@ public class RiakTest {
         riakClient.execute(storeProps);
         
     }
+    
+    static void storeKeyValuePair (RiakClient riakClient, String bucket,
+            String key, String value)
+            throws ExecutionException, InterruptedException {
+        Location location = new Location(new Namespace(bucket), key);
+
+        StoreValue sv = new StoreValue.Builder(value).withLocation(location).build();
+        StoreValue.Response svResponse = riakClient.execute(sv);
+        
+    }
+    
+    static void readByKey (RiakClient riakClient, String bucket, String key)
+            throws ExecutionException, InterruptedException {
+        Location location = new Location(new Namespace(bucket),key);
+
+        FetchValue fv = new FetchValue.Builder(location).build();
+        FetchValue.Response response = riakClient.execute(fv);
+
+        // Fetch object as String
+        String value = response.getValue(String.class);
+        System.out.println("In bucket: <" + bucket
+                + "> for key: <" + key + "> the value stored in Riak is <" + value + ">");
+        
+    }
+    
 }
