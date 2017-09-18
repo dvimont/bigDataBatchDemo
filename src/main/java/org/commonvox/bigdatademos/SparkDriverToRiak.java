@@ -83,29 +83,39 @@ public class SparkDriverToRiak {
                         .persist(StorageLevel.MEMORY_AND_DISK())
                         .reduceByKey((a, b) -> a + b);
         
-        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
+//        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
+
+        JavaPairRDD<String, String> dailyPagesByPopularity =
+                pageViewsDaily.mapToPair(
+                        // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
+                        tuple -> new Tuple2<String, String>(
+                                tuple._1().substring(0, 8) + String.format("%09d", tuple._2()), tuple._1()))
+                        .sortByKey(false);
         
-        JavaPairRDD<String, Integer> pageViewsWeekly = 
-                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
-                        .reduceByKey((a, b) -> a + b);
+        dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
+
         
-        pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
-        
-        JavaPairRDD<String, Integer> pageViewsMonthly = 
-                pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
-                        .persist(StorageLevel.MEMORY_AND_DISK())
-                        .reduceByKey((a, b) -> a + b);
-        
-        pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
-        
-        JavaPairRDD<String, Integer> pageViewsYearly = 
-                pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
-                        .reduceByKey((a, b) -> a + b);
-        
-        pageViewsYearly.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
+//        JavaPairRDD<String, Integer> pageViewsWeekly = 
+//                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
+//                        .partitionBy(HASH_PARTITIONER)
+//                        .reduceByKey((a, b) -> a + b);
+//        
+//        pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
+//        
+//        JavaPairRDD<String, Integer> pageViewsMonthly = 
+//                pageViewsDaily.mapToPair(MONTHLY_MAPPER)
+//                        .partitionBy(HASH_PARTITIONER)
+//                        .persist(StorageLevel.MEMORY_AND_DISK())
+//                        .reduceByKey((a, b) -> a + b);
+//        
+//        pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+//        
+//        JavaPairRDD<String, Integer> pageViewsYearly = 
+//                pageViewsMonthly.mapToPair(YEARLY_MAPPER)
+//                        .partitionBy(HASH_PARTITIONER)
+//                        .reduceByKey((a, b) -> a + b);
+//        
+//        pageViewsYearly.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
     }
     
