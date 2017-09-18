@@ -47,6 +47,17 @@
         <version>2.1.1</version>
         <scope>provided</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.basho.riak/riak-client -->
+    <dependency>
+        <groupId>com.basho.riak</groupId>
+        <artifactId>riak-client</artifactId>
+        <version>2.0.7</version>
+    </dependency>
+    <dependency>
+        <groupId>com.basho.riak</groupId>
+        <artifactId>spark-riak-connector</artifactId>
+        <version>1.5.1</version>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
     <dependency>
         <groupId>com.google.protobuf</groupId>
