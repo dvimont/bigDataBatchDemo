@@ -17,6 +17,7 @@ package org.commonvox.bigdatademos;
 
 import java.time.LocalDate;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
@@ -49,6 +50,7 @@ public class SparkDriverToRiak {
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     private static HashPartitioner HASH_PARTITIONER;
+    private static final TruncationMapper TRUNCATION_MAPPER = new TruncationMapper();
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
@@ -92,12 +94,11 @@ public class SparkDriverToRiak {
                         tuple -> new Tuple2<String, String>(
                                 tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
                         .sortByKey(false)
-                        
                         .mapToPair(
                                 // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
                                 tuple -> new Tuple2<String, String>(
                                         tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                        .groupByKey();
+                        .groupByKey().mapToPair(TRUNCATION_MAPPER);
         
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
@@ -178,6 +179,24 @@ public class SparkDriverToRiak {
                 }
             };
        }
+    }
+    
+    static class TruncationMapper
+            implements PairFunction<Tuple2<String, Iterable<String>>, String, Iterable<String>> { 
+        @Override
+        public Tuple2<String, Iterable<String>> call(Tuple2<String, Iterable<String>> keyValuePair)
+                throws Exception {
+            LinkedList<String> shortenedList = new LinkedList<>();
+            int count = 0;
+            for (String item : keyValuePair._2()) {
+                if (count++ > 500) {
+                    break;
+                }
+                shortenedList.add(item);
+            }
+            return new Tuple2(keyValuePair._1(), shortenedList.iterator());
+        }
+        
     }
     
     static class WeeklyMapper
