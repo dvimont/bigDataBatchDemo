@@ -92,7 +92,7 @@ public class SparkDriverToRiak {
 //        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
 
      //   JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
-        JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
+        JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
                         .filter(tuple -> tuple._2() > 100) // cull out more low-ballers
                         .mapToPair(
@@ -108,7 +108,7 @@ public class SparkDriverToRiak {
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
                         .groupByKey()
-  //                      .mapToPair(TRUNCATION_MAPPER)
+                        .mapToPair(TRUNCATION_MAPPER)
                 ;
         
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
@@ -206,17 +206,27 @@ public class SparkDriverToRiak {
     }
     
     static class TruncationMapper
-            implements PairFunction<Tuple2<String, Iterable<String>>, String, Iterable<String>> { 
+            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
         @Override
-        public Tuple2<String, Iterable<String>> call(Tuple2<String, Iterable<String>> keyValuePair)
+        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
                 throws Exception {
             LinkedList<String> shortenedList = new LinkedList<>();
             int count = 0;
-            for (String item : keyValuePair._2()) {
+            for (String value : keyValuePair._2()) {
                 if (++count > 500) {
                     break;
                 }
-                shortenedList.add(item);
+                shortenedList.add(value);
+            }
+            StringBuilder stringBuilder = new StringBuilder("[");
+            boolean pastFirstValue = false;
+            for (String value : shortenedList) {
+                if (!pastFirstValue) {
+                    pastFirstValue = true;
+                } else {
+                    stringBuilder.append(", ");
+                }
+                stringBuilder.append(value);
             }
             return new Tuple2(keyValuePair._1(), shortenedList.iterator());
         }
