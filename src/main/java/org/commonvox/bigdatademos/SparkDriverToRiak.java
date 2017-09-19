@@ -98,14 +98,14 @@ public class SparkDriverToRiak {
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                             tuple -> new Tuple2<String, String>(
-                                    tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
+                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
-                        
+                        .mapToPair(new CountingMapper())
+                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
                         .mapToPair(
                             // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                        .mapToPair(new CountingMapper())
 //                        .groupByKey()
 //                        .mapToPair(TRUNCATION_MAPPER)
                 ;
@@ -191,9 +191,14 @@ public class SparkDriverToRiak {
     static class CountingMapper
             implements PairFunction<Tuple2<String, String>, String, String> {
         int counter = 0;
+        String currentDayKey = null;
         @Override
         public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
                 throws Exception {
+            if (currentDayKey == null || currentDayKey != keyValuePair._1().substring(0, 8)) {
+                currentDayKey = keyValuePair._1().substring(0, 8);
+                counter = 0;
+            }
             return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
         }
         
