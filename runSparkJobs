@@ -9,7 +9,7 @@ echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
 echo "Running SparkDriver job: "  `date -u --rfc-822`
 # NOTE: this is customized from an example execution in Learning Spark book
 $SPARK_HOME/bin/spark-submit \
-  --master ec2-54-164-189-32.compute-1.amazonaws.com \
+  --master spark://ec2-54-164-189-32.compute-1.amazonaws.com \
   --class org.commonvox.bigdatademos.SparkDriverToRiak \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
   hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:9000/ \
