@@ -50,7 +50,9 @@ public class SparkDriverToRiak {
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     private static HashPartitioner HASH_PARTITIONER;
-    private static final TruncationMapper TRUNCATION_MAPPER = new TruncationMapper();
+    private static final CullingAggregatingMapper TRUNCATION_MAPPER = new CullingAggregatingMapper();
+    public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
+    public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
@@ -205,26 +207,28 @@ public class SparkDriverToRiak {
         
     }
     
-    static class TruncationMapper
+    static class CullingAggregatingMapper
             implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
         @Override
         public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
                 throws Exception {
             int count = 0;
-            StringBuilder stringBuilder = new StringBuilder("[");
+            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
             boolean pastFirstValue = false;
             for (String value : keyValuePair._2()) {
+                // only want the top 500 popular pages
                 if (++count > 500) {
                     break;
                 }
                 if (!pastFirstValue) {
                     pastFirstValue = true;
                 } else {
-                    stringBuilder.append(", ");
+                    // line-feed delimiter mirrors original raw-data delimiter
+                    stringBuilder.append("\n");
                 }
                 stringBuilder.append(value.substring(12));
             }
-            stringBuilder.append("]");
+            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
             return new Tuple2(keyValuePair._1(), stringBuilder.toString());
         }
     }
