@@ -210,17 +210,13 @@ public class SparkDriverToRiak {
         @Override
         public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
                 throws Exception {
-            LinkedList<String> shortenedList = new LinkedList<>();
             int count = 0;
+            StringBuilder stringBuilder = new StringBuilder("[");
+            boolean pastFirstValue = false;
             for (String value : keyValuePair._2()) {
                 if (++count > 500) {
                     break;
                 }
-                shortenedList.add(value);
-            }
-            StringBuilder stringBuilder = new StringBuilder("[");
-            boolean pastFirstValue = false;
-            for (String value : shortenedList) {
                 if (!pastFirstValue) {
                     pastFirstValue = true;
                 } else {
