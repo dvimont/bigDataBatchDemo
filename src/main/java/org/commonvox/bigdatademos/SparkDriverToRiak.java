@@ -50,9 +50,11 @@ public class SparkDriverToRiak {
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     private static HashPartitioner HASH_PARTITIONER;
-    private static final CullingAggregatingMapper TRUNCATION_MAPPER = new CullingAggregatingMapper();
+    private static final CullingAggregatingMapper CULLING_AGGREGATING_MAPPER =
+            new CullingAggregatingMapper();
     public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
+    public static final String VALUE_ARRAY_DELIMITER = ", ";
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
@@ -101,7 +103,7 @@ public class SparkDriverToRiak {
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                             tuple -> new Tuple2<String, String>(
-                                    tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
+                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
                         .mapToPair(new CountingMapper())
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
@@ -110,7 +112,7 @@ public class SparkDriverToRiak {
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
                         .groupByKey()
-                        .mapToPair(TRUNCATION_MAPPER)
+                        .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
         
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
@@ -224,7 +226,7 @@ public class SparkDriverToRiak {
                     pastFirstValue = true;
                 } else {
                     // line-feed delimiter mirrors original raw-data delimiter
-                    stringBuilder.append("\n");
+                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
                 }
                 stringBuilder.append(value.substring(12));
             }
