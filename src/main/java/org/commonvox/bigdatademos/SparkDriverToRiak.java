@@ -94,8 +94,6 @@ public class SparkDriverToRiak {
      //   JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
-//                        // temporary filter for testing small amount of data
-//                        .filter(tuple -> tuple._1().substring(0, 8).equals("20160929"))
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
@@ -196,7 +194,7 @@ public class SparkDriverToRiak {
         @Override
         public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
                 throws Exception {
-            return new Tuple2(keyValuePair._1(), String.format("%12d", ++counter) + keyValuePair._2());
+            return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
         }
         
     }
