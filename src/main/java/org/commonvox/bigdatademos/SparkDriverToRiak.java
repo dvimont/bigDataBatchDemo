@@ -83,7 +83,11 @@ public class SparkDriverToRiak {
                         .mapToPair(tuple -> tuple)
                         .partitionBy(HASH_PARTITIONER)
                         .persist(StorageLevel.MEMORY_AND_DISK())
-                        .reduceByKey((a, b) -> a + b);
+                        // reduce to daily view summary
+                        .reduceByKey((a, b) -> a + b)
+                        // filter out extremely low daily views
+                        .filter(tuple -> tuple._2() > 4) 
+;
         
 //        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
 
@@ -98,10 +102,12 @@ public class SparkDriverToRiak {
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
                         .sortByKey(false)
+                        
                         .mapToPair(
                             // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+                        .mapToPair(new CountingMapper())
 //                        .groupByKey()
 //                        .mapToPair(TRUNCATION_MAPPER)
                 ;
@@ -166,9 +172,6 @@ public class SparkDriverToRiak {
                     Integer outputtedValue = 0;
                     do {
                         String rawDataEntry = keyValuePairs.next()._2().toString();
-//                        if (++displayCount < 20) {
-//                            System.out.println("-- rawDataEntry: " + rawDataEntry);
-//                        }
 
                         // Raw data entry format is space-delimited:
                         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
@@ -187,6 +190,17 @@ public class SparkDriverToRiak {
        }
     }
     
+    static class CountingMapper
+            implements PairFunction<Tuple2<String, String>, String, String> {
+        int counter = 0;
+        @Override
+        public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
+                throws Exception {
+            return new Tuple2(keyValuePair._1(), String.format("%12d", ++counter) + keyValuePair._2());
+        }
+        
+    }
+    
     static class TruncationMapper
             implements PairFunction<Tuple2<String, Iterable<String>>, String, Iterable<String>> { 
         @Override
@@ -202,7 +216,6 @@ public class SparkDriverToRiak {
             }
             return new Tuple2(keyValuePair._1(), shortenedList.iterator());
         }
-        
     }
     
     static class WeeklyMapper
