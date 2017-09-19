@@ -104,14 +104,14 @@ public class SparkDriverToRiak {
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper())
+                        .mapToPair(new CountingMapper(8))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
                         .mapToPair(
                             // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
                         .groupByKey()
                         .mapToPair(CULLING_AGGREGATING_MAPPER)
@@ -132,14 +132,14 @@ public class SparkDriverToRiak {
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                                 // NOTE that in case of weekly data, date will always be a Sunday!!
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper())
+                        .mapToPair(new CountingMapper(8))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
                         .mapToPair(
                             // new key is yyyymmdd (a Sunday)
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
                         .groupByKey()
                         .mapToPair(CULLING_AGGREGATING_MAPPER)
@@ -158,10 +158,10 @@ public class SparkDriverToRiak {
                         .mapToPair(
                             // new key is yyyymmnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper())
+                        .mapToPair(new CountingMapper(6))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
                         .mapToPair(
                             // new key is yyyymm
@@ -184,14 +184,14 @@ public class SparkDriverToRiak {
                         .mapToPair(
                             // new key is yyyynnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper())
+                        .mapToPair(new CountingMapper(4))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
                         .mapToPair(
                             // new key is yyyy
-                            tuple -> new Tuple2<String, String>(
+                            tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
                         .groupByKey()
                         .mapToPair(CULLING_AGGREGATING_MAPPER)
@@ -255,12 +255,18 @@ public class SparkDriverToRiak {
     static class CountingMapper
             implements PairFunction<Tuple2<String, String>, String, String> {
         int counter = 0;
-        String currentDayKey = "xxx";
+        String currentDayKey = "";
+        final int timestampLength;
+        
+        public CountingMapper(int timestampLength) {
+            this.timestampLength = timestampLength;
+        }
+        
         @Override
         public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
                 throws Exception {
-            if (!currentDayKey.equals(keyValuePair._2().substring(0, 8))) {
-                currentDayKey = keyValuePair._2().substring(0, 8);
+            if (!currentDayKey.equals(keyValuePair._2().substring(0, timestampLength))) {
+                currentDayKey = keyValuePair._2().substring(0, timestampLength);
                 counter = 0;
             }
             return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
