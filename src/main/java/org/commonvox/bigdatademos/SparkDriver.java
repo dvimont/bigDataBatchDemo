@@ -52,7 +52,7 @@ public class SparkDriver {
     public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
-    private static final StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.DISK_ONLY();
+    private static final StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
@@ -91,9 +91,6 @@ public class SparkDriver {
                         .filter(tuple -> tuple._2() > 2) 
 ;
         
-//        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
-
-     //   JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
                         // filter out pages w/ small daily-views
@@ -113,7 +110,6 @@ public class SparkDriver {
                         .groupByKey()
                         .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
-        
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
         
@@ -148,6 +144,8 @@ public class SparkDriver {
                      //   .partitionBy(HASH_PARTITIONER)
                         .persist(MASTER_PERSISTENCE_OPTION)
                         .reduceByKey((a, b) -> a + b);
+        
+        pageViewsDaily.unpersist();
         
         JavaPairRDD<String, String> monthlyPagesByPopularity =
                 pageViewsMonthly
