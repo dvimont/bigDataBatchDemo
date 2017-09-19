@@ -191,14 +191,14 @@ public class SparkDriverToRiak {
     static class CountingMapper
             implements PairFunction<Tuple2<String, String>, String, String> {
         int counter = 0;
-        String currentDayKey = null;
+        String currentDayKey = "xxx";
         @Override
         public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
                 throws Exception {
-//            if (currentDayKey == null || currentDayKey != keyValuePair._1().substring(0, 8)) {
-//                currentDayKey = keyValuePair._1().substring(0, 8);
-//                counter = 0;
-//            }
+            if (currentDayKey != keyValuePair._1().substring(0, 8)) {
+                currentDayKey = keyValuePair._1().substring(0, 8);
+                counter = 0;
+            }
             return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
         }
         
