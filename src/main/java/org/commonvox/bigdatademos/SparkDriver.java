@@ -40,15 +40,19 @@ import scala.Tuple2;
  */
 public class SparkDriver {
     
-//    private static final String hdfsNamenode =
-//            "hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:50070/";
-
 //    private static int displayCount = 0;
+    private static final int POPULAR_PAGES_LIMIT = 500;
     private static final DailyMapper DAILY_MAPPER = new DailyMapper();
     private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     private static HashPartitioner HASH_PARTITIONER;
+    private static final CullingAggregatingMapper CULLING_AGGREGATING_MAPPER =
+            new CullingAggregatingMapper();
+    public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
+    public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
+    public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
+    private static final StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.DISK_ONLY();
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
@@ -79,33 +83,118 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                        .partitionBy(HASH_PARTITIONER)
-                        .persist(StorageLevel.MEMORY_AND_DISK())
-                        .reduceByKey((a, b) -> a + b);
+                     //   .partitionBy(HASH_PARTITIONER)
+                        .persist(MASTER_PERSISTENCE_OPTION)
+                        // reduce to daily view summary
+                        .reduceByKey((a, b) -> a + b)
+                        // filter out extremely low daily views
+                        .filter(tuple -> tuple._2() > 2) 
+;
         
-        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
+//        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
+
+     //   JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
+        JavaPairRDD<String, String> dailyPagesByPopularity =
+                pageViewsDaily
+                        // filter out pages w/ small daily-views
+                        .filter(tuple -> tuple._2() > 100) 
+                        .mapToPair(
+                            // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
+                        .sortByKey(false)
+                        .mapToPair(new CountingMapper(8))
+                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
+                        .mapToPair(
+                            // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+                        .groupByKey()
+                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                ;
+        
+        dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
+
         
         JavaPairRDD<String, Integer> pageViewsWeekly = 
                 pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
+                      //  .partitionBy(HASH_PARTITIONER)
                         .reduceByKey((a, b) -> a + b);
         
-        pageViewsWeekly.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
+        JavaPairRDD<String, String> weeklyPagesByPopularity =
+                pageViewsWeekly
+                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
+                        .mapToPair(
+                            // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                                // NOTE that in case of weekly data, date will always be a Sunday!!
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
+                        .sortByKey(false)
+                        .mapToPair(new CountingMapper(8))
+                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
+                        .mapToPair(
+                            // new key is yyyymmdd (a Sunday)
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+                        .groupByKey()
+                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                ;
+        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
-                        .persist(StorageLevel.MEMORY_AND_DISK())
+                     //   .partitionBy(HASH_PARTITIONER)
+                        .persist(MASTER_PERSISTENCE_OPTION)
                         .reduceByKey((a, b) -> a + b);
         
-        pageViewsMonthly.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+        JavaPairRDD<String, String> monthlyPagesByPopularity =
+                pageViewsMonthly
+                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
+                        .mapToPair(
+                            // new key is yyyymmnnnnnnnnn, where nnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1()))
+                        .sortByKey(false)
+                        .mapToPair(new CountingMapper(6))
+                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
+                        .mapToPair(
+                            // new key is yyyymm
+                            tuple -> new Tuple2<String, String>(
+                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
+                        .groupByKey()
+                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                ;
+        
+        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsYearly = 
                 pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
+                    //    .partitionBy(HASH_PARTITIONER)
                         .reduceByKey((a, b) -> a + b);
         
-        pageViewsYearly.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
+        JavaPairRDD<String, String> yearlyPagesByPopularity =
+                pageViewsYearly
+                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
+                        .mapToPair(
+                            // new key is yyyynnnnnnnnn, where nnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1()))
+                        .sortByKey(false)
+                        .mapToPair(new CountingMapper(4))
+                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
+                        .mapToPair(
+                            // new key is yyyy
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
+                        .groupByKey()
+                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                ;
+        
+        yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
     }
     
@@ -142,9 +231,6 @@ public class SparkDriver {
                     Integer outputtedValue = 0;
                     do {
                         String rawDataEntry = keyValuePairs.next()._2().toString();
-//                        if (++displayCount < 20) {
-//                            System.out.println("-- rawDataEntry: " + rawDataEntry);
-//                        }
 
                         // Raw data entry format is space-delimited:
                         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
@@ -161,6 +247,53 @@ public class SparkDriver {
                 }
             };
        }
+    }
+    
+    static class CountingMapper
+            implements PairFunction<Tuple2<String, String>, String, String> {
+        int counter = 0;
+        String currentDayKey = "";
+        final int timestampLength;
+        
+        public CountingMapper(int timestampLength) {
+            this.timestampLength = timestampLength;
+        }
+        
+        @Override
+        public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
+                throws Exception {
+            if (!currentDayKey.equals(keyValuePair._2().substring(0, timestampLength))) {
+                currentDayKey = keyValuePair._2().substring(0, timestampLength);
+                counter = 0;
+            }
+            return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
+        }
+        
+    }
+    
+    static class CullingAggregatingMapper
+            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
+        @Override
+        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
+                throws Exception {
+            int count = 0;
+            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
+            boolean pastFirstValue = false;
+            for (String value : keyValuePair._2()) {
+                // only want the top popular pages
+                if (++count > POPULAR_PAGES_LIMIT) {
+                    break;
+                }
+                if (!pastFirstValue) {
+                    pastFirstValue = true;
+                } else {
+                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
+                }
+                stringBuilder.append(value.substring(12));
+            }
+            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
+            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
+        }
     }
     
     static class WeeklyMapper
