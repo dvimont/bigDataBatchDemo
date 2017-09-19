@@ -199,7 +199,7 @@ public class SparkDriverToRiak {
                 currentDayKey = keyValuePair._1().substring(0, 8);
                 counter = 0;
             }
-            return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
+            return new Tuple2(keyValuePair._1(), String.format("%12d", ++counter) + keyValuePair._2());
         }
         
     }
