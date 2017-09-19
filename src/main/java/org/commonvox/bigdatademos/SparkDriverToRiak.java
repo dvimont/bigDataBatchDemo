@@ -98,7 +98,7 @@ public class SparkDriverToRiak {
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                             tuple -> new Tuple2<String, String>(
-                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
+                                    tuple._1().substring(0, 8) + String.format("%12d", tuple._2()), tuple._1()))
                         .sortByKey(false)
                         .mapToPair(new CountingMapper())
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
