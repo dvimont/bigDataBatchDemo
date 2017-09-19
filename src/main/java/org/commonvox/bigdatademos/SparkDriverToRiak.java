@@ -107,7 +107,7 @@ public class SparkDriverToRiak {
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
                         .groupByKey()
-                        .mapToPair(TRUNCATION_MAPPER)
+  //                      .mapToPair(TRUNCATION_MAPPER)
                 ;
         
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
