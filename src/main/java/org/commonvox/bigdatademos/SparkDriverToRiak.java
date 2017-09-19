@@ -87,7 +87,7 @@ public class SparkDriverToRiak {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                        .partitionBy(HASH_PARTITIONER)
+                     //   .partitionBy(HASH_PARTITIONER)
                         .persist(StorageLevel.MEMORY_AND_DISK())
                         // reduce to daily view summary
                         .reduceByKey((a, b) -> a + b)
@@ -122,7 +122,7 @@ public class SparkDriverToRiak {
         
         JavaPairRDD<String, Integer> pageViewsWeekly = 
                 pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
+                      //  .partitionBy(HASH_PARTITIONER)
                         .reduceByKey((a, b) -> a + b);
         
         JavaPairRDD<String, String> weeklyPagesByPopularity =
@@ -148,7 +148,7 @@ public class SparkDriverToRiak {
         
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
+                     //   .partitionBy(HASH_PARTITIONER)
                         .persist(StorageLevel.MEMORY_AND_DISK())
                         .reduceByKey((a, b) -> a + b);
         
@@ -175,7 +175,7 @@ public class SparkDriverToRiak {
         
         JavaPairRDD<String, Integer> pageViewsYearly = 
                 pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-                        .partitionBy(HASH_PARTITIONER)
+                    //    .partitionBy(HASH_PARTITIONER)
                         .reduceByKey((a, b) -> a + b);
         
         JavaPairRDD<String, String> yearlyPagesByPopularity =
@@ -197,7 +197,7 @@ public class SparkDriverToRiak {
                         .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
         
-        yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+        yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
     }
     
