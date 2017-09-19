@@ -94,7 +94,7 @@ public class SparkDriverToRiak {
      //   JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
         JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
                 pageViewsDaily
-                        .filter(tuple -> tuple._2() > 100)
+                        .filter(tuple -> tuple._2() > 100) // cull out more low-ballers
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
