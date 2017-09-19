@@ -195,7 +195,7 @@ public class SparkDriverToRiak {
         @Override
         public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
                 throws Exception {
-            if (currentDayKey != keyValuePair._2().substring(0, 8)) {
+            if (!currentDayKey.equals(keyValuePair._2().substring(0, 8))) {
                 currentDayKey = keyValuePair._2().substring(0, 8);
                 counter = 0;
             }
