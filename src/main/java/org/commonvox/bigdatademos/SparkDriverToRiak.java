@@ -90,7 +90,7 @@ public class SparkDriverToRiak {
                         // reduce to daily view summary
                         .reduceByKey((a, b) -> a + b)
                         // filter out extremely low daily views
-                        .filter(tuple -> tuple._2() > 4) 
+                        // .filter(tuple -> tuple._2() > 4) 
 ;
         
 //        pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");
