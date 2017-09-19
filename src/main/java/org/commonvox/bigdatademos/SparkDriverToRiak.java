@@ -228,7 +228,8 @@ public class SparkDriverToRiak {
                 }
                 stringBuilder.append(value);
             }
-            return new Tuple2(keyValuePair._1(), shortenedList.iterator());
+            stringBuilder.append("]");
+            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
         }
     }
     
