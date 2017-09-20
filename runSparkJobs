@@ -1,5 +1,5 @@
 #!/bin/bash
-NUM_PARTITIONS=$1
+STORAGE_LEVEL=$1 # MEMDISK or DISK
 
 echo "Removing existing HDFS pageview mapreduce output"
 hadoop fs -rm -r /test/pageviews.*
@@ -13,7 +13,7 @@ $SPARK_HOME/bin/spark-submit \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
   hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:9000/ \
-  $NUM_PARTITIONS test/raw_files test/pageviews.daily test/pageviews.weekly \
+  $STORAGE_LEVEL test/raw_files test/pageviews.daily test/pageviews.weekly \
   test/pageviews.monthly test/pageviews.yearly > ./logs/spark_output.log  2>&1
   # args after .jar above == hdfs-url, input HDFS file, nbr-partitions, & output daily, weekly, monthly, yearly HDFS files
 

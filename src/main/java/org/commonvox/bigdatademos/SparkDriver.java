@@ -46,13 +46,13 @@ public class SparkDriver {
     private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
-    private static HashPartitioner HASH_PARTITIONER;
+    // private static HashPartitioner HASH_PARTITIONER;
     private static final CullingAggregatingMapper CULLING_AGGREGATING_MAPPER =
             new CullingAggregatingMapper();
     public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
-    private static final StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
+    private static StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
@@ -63,7 +63,12 @@ public class SparkDriver {
           System.exit(-1);
         }
         String hdfsNamenode = args[0];
-        HASH_PARTITIONER = new HashPartitioner(Integer.valueOf(args[1]));
+        // HASH_PARTITIONER = new HashPartitioner(Integer.valueOf(args[1]));
+        if (args[1].toUpperCase().equals("MEMDISK")) {
+            MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
+        } else if (args[1].toUpperCase().equals("DISK")) {
+            MASTER_PERSISTENCE_OPTION = StorageLevel.DISK_ONLY();
+        }
         String inputHdfsFile = args[2];
         String outputDailyHdfsFile = args[3];
         String outputWeeklyHdfsFile = args[4];
