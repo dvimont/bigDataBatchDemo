@@ -3,11 +3,11 @@
 # setting limit to 0 == no limit
 PROCESSING_LIMIT=$1
 
-echo "Removing existing HDFS test data"
-hadoop fs -rm -r /test/
+# echo "Removing existing HDFS test data"
+# hadoop fs -rm -r /test/
 
-echo "Recreating test directory and subdirectories"
-hadoop fs -mkdir /test /test/raw_files
+# echo "Recreating test directory and subdirectories"
+# hadoop fs -mkdir /test /test/raw_files
 
 echo "STARTING download from Wikimedia and load into HDFS" `date -u --rfc-822`
 
@@ -22,13 +22,17 @@ for m in {1..9}
 do
    echo "Processing $y month $m"
    mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$y/$y-0$m/ $PROCESSING_LIMIT" >> ./logs/download.log
-   hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+#  hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+   aws s3 cp ./raw_files/ s3:/wmf-insight-datalake/raw_files/$y/ --recursive
+   rm ./raw_files/*.*
 done
 for m in {10..12}
 do
    echo "Processing $y month $m"
    mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$y/$y-$m/ $PROCESSING_LIMIT" >> ./logs/download.log
-   hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+#  hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
+   aws s3 cp ./raw_files/ s3:/wmf-insight-datalake/raw_files/$y/ --recursive
+   rm ./raw_files/*.*
 done
 done
 
