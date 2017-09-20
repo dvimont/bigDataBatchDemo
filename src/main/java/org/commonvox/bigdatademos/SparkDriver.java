@@ -70,7 +70,7 @@ public class SparkDriver {
         String outputMonthlyHdfsFile = args[5];
         String outputYearlyHdfsFile = args[6];
         
-        SparkConf conf = new SparkConf().setAppName("PageViewsDaily");
+        SparkConf conf = new SparkConf().setAppName("WikimediaPageViewsProcessing");
         JavaSparkContext sc = new JavaSparkContext(conf);
         JavaNewHadoopRDD<LongWritable, Text> hadoopRDD = 
              (JavaNewHadoopRDD) sc.newAPIHadoopFile(hdfsNamenode +
