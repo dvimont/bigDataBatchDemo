@@ -23,7 +23,7 @@ do
    echo "Processing $y month $m"
    mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$y/$y-0$m/ $PROCESSING_LIMIT" >> ./logs/download.log
 #  hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
-   aws s3 cp ./raw_files/ s3:/wmf-insight-datalake/raw_files/$y/ --recursive
+   aws s3 cp ./raw_files/ s3://wmf-insight-datalake/raw_files/$y/ --recursive
    rm ./raw_files/*.*
 done
 for m in {10..12}
@@ -31,7 +31,7 @@ do
    echo "Processing $y month $m"
    mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloader" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$y/$y-$m/ $PROCESSING_LIMIT" >> ./logs/download.log
 #  hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log
-   aws s3 cp ./raw_files/ s3:/wmf-insight-datalake/raw_files/$y/ --recursive
+   aws s3 cp ./raw_files/ s3://wmf-insight-datalake/raw_files/$y/ --recursive
    rm ./raw_files/*.*
 done
 done
