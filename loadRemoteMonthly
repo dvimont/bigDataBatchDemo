@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # setting limit to 0 == no limit
-PROCESSING_LIMIT=$1
-YEAR=$2
-MONTH=$3
+YEAR=$1
+MONTH=$2
+PROCESSING_LIMIT=$3
 LOCAL_TARGET=./raw_files/$YEAR/$MONTH
 
 echo "STARTING download from Wikimedia and load into S3 for $YEAR-$MONTH with processing limit of $PROCESSING_LIMIT" `date -u --rfc-822`
