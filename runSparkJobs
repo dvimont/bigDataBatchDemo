@@ -1,7 +1,8 @@
 #!/bin/bash
 STORAGE_LEVEL=$1 # MEMDISK or DISK
-EXECUTOR_MEM=$2
-SPARK_MASTER=$3 # port is usually 7077
+EXECUTOR_MEM=$2  # 1g, 2g, 4g, etc. -- note that r4.2xlarge machines have 60GB ram
+SPARK_MASTER=$3 # note that port is usually 7077
+HDFS_MASTER=$4
 
 echo "Removing existing HDFS pageview mapreduce output"
 hadoop fs -rm -r /test/pageviews.*
@@ -11,14 +12,12 @@ echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
 echo "Running SparkDriver job: "  `date -u --rfc-822`
 # NOTE: this is customized from an example execution in Learning Spark book
 $SPARK_HOME/bin/spark-submit \
-  --master spark://ec2-54-164-189-32.compute-1.amazonaws.com:7077 \
-  --executor-memory 1g \
+  --master $SPARK_MASTER \
+  --executor-memory $EXECUTOR_MEM \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
-  hdfs://ec2-54-164-189-32.compute-1.amazonaws.com:9000/ \
-  $STORAGE_LEVEL test/raw_files test/pageviews.daily test/pageviews.weekly \
+  $HDFS_MASTER $STORAGE_LEVEL test/raw_files test/pageviews.daily test/pageviews.weekly \
   test/pageviews.monthly test/pageviews.yearly > ./logs/spark_output.log  2>&1
   # args after .jar above == hdfs-url, input HDFS file, nbr-partitions, & output daily, weekly, monthly, yearly HDFS files
 
 echo "COMPLETED PageViews Spark processing: " `date -u --rfc-822`
-cd ..

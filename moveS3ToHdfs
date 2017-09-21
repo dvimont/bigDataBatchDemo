@@ -10,13 +10,13 @@ hadoop fs -mkdir /test /test/raw_files
 
 rm -r ./raw_files
 mkdir ./raw_files
+rm ./logs/s3_download.log
 rm ./logs/hdfs_move.log
 
 echo "STARTING download from S3 and load into HDFS for $YEAR" `date -u --rfc-822`
 
-aws s3 cp s3://wmf-insight-datalake/raw_files/$YEAR/ ./raw_files/ --recursive
-hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files > ./logs/hdfs_move.log
-rm ./raw_files/*.*
+aws s3 cp s3://wmf-insight-datalake/raw_files/$YEAR/ ./raw_files/ --recursive  > ./logs/s3_download.log 2>&1
+hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files > ./logs/hdfs_move.log 2>&1
 
 echo "COMPLETED download from S3 and load into HDFS for $YEAR" `date -u --rfc-822`
 
