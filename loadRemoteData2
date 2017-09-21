@@ -9,7 +9,7 @@ PROCESSING_LIMIT=$1
 # echo "Recreating test directory and subdirectories"
 # hadoop fs -mkdir /test /test/raw_files
 
-echo "STARTING download from Wikimedia and load into HDFS" `date -u --rfc-822`
+echo "STARTING download from Wikimedia and load into S3" `date -u --rfc-822`
 
 rm -r ./raw_files
 mkdir ./raw_files
