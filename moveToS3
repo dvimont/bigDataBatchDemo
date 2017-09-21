@@ -1,0 +1,11 @@
+#!/bin/bash
+
+YEAR=$1
+MONTH=$2
+LOCAL_TARGET=./raw_files/$YEAR/$MONTH
+
+echo "STARTING move to S3 for $YEAR-$MONTH" `date -u --rfc-822`
+
+aws s3 cp $LOCAL_TARGET/ s3://wmf-insight-datalake/raw_files/$YEAR/ --recursive && rm ./raw_files/$YEAR/$MONTH/*.*
+
+echo "COMPLETED move to S3 for $YEAR-$MONTH: " `date -u --rfc-822`
