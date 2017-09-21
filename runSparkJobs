@@ -1,5 +1,7 @@
 #!/bin/bash
 STORAGE_LEVEL=$1 # MEMDISK or DISK
+EXECUTOR_MEM=$2
+SPARK_MASTER=$3 # port is usually 7077
 
 echo "Removing existing HDFS pageview mapreduce output"
 hadoop fs -rm -r /test/pageviews.*
