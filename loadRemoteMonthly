@@ -12,9 +12,9 @@ rm -r $LOCAL_TARGET
 mkdir ./raw_files ./raw_files/$YEAR $LOCAL_TARGET
 rm ./logs/download$YEAR$MONTH.log
 
-   echo "Processing $y month $m"
-   mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloaderMonthly" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$YEAR/$YEAR-$MONTH/ $LOCAL_TARGET/ $PROCESSING_LIMIT" >> ./logs/download$YEAR$MONTH.log
-   aws s3 cp $LOCAL_TARGET/ s3://wmf-insight-datalake/raw_files/$YEAR/ --recursive
-   rm ./raw_files/$YEAR/$MONTH/*.*
+echo "Processing $YEAR month $MONTH"
+mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.WikimediaFileDownloaderMonthly" -Dexec.args="https://dumps.wikimedia.org/other/pageviews/$YEAR/$YEAR-$MONTH/ $LOCAL_TARGET/ $PROCESSING_LIMIT" >> ./logs/download$YEAR$MONTH.log
+aws s3 cp $LOCAL_TARGET/ s3://wmf-insight-datalake/raw_files/$YEAR/ --recursive
+rm ./raw_files/$YEAR/$MONTH/*.*
 
 echo "COMPLETED download processing for $YEAR-$MONTH: " `date -u --rfc-822`
