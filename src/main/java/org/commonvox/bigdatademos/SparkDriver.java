@@ -89,7 +89,7 @@ public class SparkDriver {
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
                      //   .partitionBy(HASH_PARTITIONER)
-                        .persist(MASTER_PERSISTENCE_OPTION)
+//                        .persist(MASTER_PERSISTENCE_OPTION) // removed 9-22 after weekly removed
                         // reduce to daily view summary
                         .reduceByKey((a, b) -> a + b)
                         // filter out extremely low daily views
@@ -118,31 +118,31 @@ public class SparkDriver {
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
         
-        JavaPairRDD<String, Integer> pageViewsWeekly = 
-                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-                      //  .partitionBy(HASH_PARTITIONER)
-                        .reduceByKey((a, b) -> a + b);
-        
-        JavaPairRDD<String, String> weeklyPagesByPopularity =
-                pageViewsWeekly
-                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
-                        .mapToPair(
-                            // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
-                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-                                // NOTE that in case of weekly data, date will always be a Sunday!!
-                            tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
-                        .sortByKey(false)
-                        .mapToPair(new CountingMapper(8))
-                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
-                        .mapToPair(
-                            // new key is yyyymmdd (a Sunday)
-                            tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                        .groupByKey()
-                        .mapToPair(CULLING_AGGREGATING_MAPPER)
-                ;
-        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
+//        JavaPairRDD<String, Integer> pageViewsWeekly = 
+//                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
+//                      //  .partitionBy(HASH_PARTITIONER)
+//                        .reduceByKey((a, b) -> a + b);
+//        
+//        JavaPairRDD<String, String> weeklyPagesByPopularity =
+//                pageViewsWeekly
+//                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
+//                        .mapToPair(
+//                            // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
+//                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+//                                // NOTE that in case of weekly data, date will always be a Sunday!!
+//                            tuple -> new Tuple2<>(
+//                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
+//                        .sortByKey(false)
+//                        .mapToPair(new CountingMapper(8))
+//                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
+//                        .mapToPair(
+//                            // new key is yyyymmdd (a Sunday)
+//                            tuple -> new Tuple2<>(
+//                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+//                        .groupByKey()
+//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+//                ;
+//        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
         
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
@@ -150,7 +150,7 @@ public class SparkDriver {
                         .persist(MASTER_PERSISTENCE_OPTION)
                         .reduceByKey((a, b) -> a + b);
         
-        pageViewsDaily.unpersist();
+//        pageViewsDaily.unpersist(); // removed 9-22 after weekly removed
         
         JavaPairRDD<String, String> monthlyPagesByPopularity =
                 pageViewsMonthly
