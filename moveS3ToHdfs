@@ -1,6 +1,8 @@
 #!/bin/bash
 
 YEAR=$1
+START_MONTH=$2 # e.g., 01 for most years -- or 05 for 2015
+END_MONTH=$3 # e.g., 12 for most years -- or current month of latest year
 
 echo "Removing existing HDFS data"
 hadoop fs -rm -r /test/
@@ -15,8 +17,11 @@ rm ./logs/hdfs_move.log
 
 echo "STARTING download from S3 and load into HDFS for $YEAR" `date -u --rfc-822`
 
-aws s3 cp s3://wmf-insight-datalake/raw_files/$YEAR/ ./raw_files/ --recursive  > ./logs/s3_download.log 2>&1
-hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files > ./logs/hdfs_move.log 2>&1
+for m in {$START_MONTH..$END_MONTH}
+do
+  aws s3 cp s3://wmf-insight-datalake/pageviews/$YEAR/$m ./raw_files/ --recursive  >> ./logs/s3_download.log 2>&1
+  hadoop fs -moveFromLocal ./raw_files/*.* /test/raw_files >> ./logs/hdfs_move.log 2>&1
+done
 
 echo "COMPLETED download from S3 and load into HDFS for $YEAR" `date -u --rfc-822`
 
