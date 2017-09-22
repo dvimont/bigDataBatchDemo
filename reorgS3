@@ -1,6 +1,8 @@
 #!/bin/bash
 
 YEAR=$1
+START_MONTH=$2 # e.g., 01 for most years -- or 05 for 2015
+END_MONTH=$3 # e.g., 12 for most years -- or current month of latest year
 
 rm ./downloaded_files/*.*
 rm -r ./downloaded_files
@@ -11,28 +13,29 @@ mkdir ./reorg/$YEAR
 rm ./logs/s3_download.log
 rm ./logs/s3_upload.log
 
-echo "STARTING reorg of S3 for $YEAR" `date -u --rfc-822`
+echo "STARTING reorg of S3 for $YEAR months $START_MONTH thru $END_MONTH" `date -u --rfc-822`
 
 echo "Downloading $YEAR month $m files from S3"
-# aws s3 cp s3://wmf-insight-datalake/raw_files/$YEAR/ ./downloaded_files/ --recursive  > ./logs/s3_reorg.log 2>&1
+aws s3 cp s3://wmf-insight-datalake/raw_files/$YEAR/ ./downloaded_files/ --recursive  > ./logs/s3_reorg.log 2>&1
 
-for m in {01..12}
+for m in {$START_MONTH..$END_MONTH}
 do
    echo "Reorganizing of $YEAR month $m"
    mkdir ./reorg/$YEAR/$m
-#   mv ./downloaded_files/pageviews-$YEAR$m*.* ./reorg/$YEAR/$m/
+   mv ./downloaded_files/pageviews-$YEAR$m*.gz ./reorg/$YEAR/$m/
 done
 
 echo "Uploading reorganized files back to S3 for $YEAR" `date -u --rfc-822`
-for m in {01..12}
+for m in {$START_MONTH..$END_MONTH}
 do
    echo "Uploading reorg of $YEAR month $m"
-#   aws s3 cp ./reorg/$YEAR/$m s3://wmf-insight-datalake/pageviews/$YEAR/$m --recursive >> ./logs/s3_reorg.log 2>&1
+   aws s3 cp ./reorg/$YEAR/$m s3://wmf-insight-datalake/pageviews/$YEAR/$m --recursive >> ./logs/s3_reorg.log 2>&1
 done
 
 echo "Removing local reorg files"
-# rm -r ./reorg
-# rm -r ./downloaded_files
+rm -r ./reorg
+rm ./downloaded_files/*.*
+rm -r ./downloaded_files
 
-echo "COMPLETED reorg of S3 for $YEAR" `date -u --rfc-822`
+echo "COMPLETED reorg of S3 for $YEAR months $START_MONTH thru $END_MONTH" `date -u --rfc-822`
 
