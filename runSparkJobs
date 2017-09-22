@@ -2,8 +2,7 @@
 STORAGE_LEVEL=$1 # MEMDISK or DISK
 EXECUTOR_MEM=$2  # 1g, 2g, 4g, etc. -- note that r4.2xlarge machines have 60GB ram
 SPARK_MASTER=$3 # note that port is usually 7077
-S3_BUCKET=$4
-HDFS_MASTER=$5
+HDFS_MASTER=$4
 
 echo "Removing existing HDFS pageview mapreduce output"
 hadoop fs -rm -r /test/pageviews.*
@@ -17,8 +16,8 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory $EXECUTOR_MEM \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
-  $S3_BUCKET $HDFS_MASTER $STORAGE_LEVEL test/pageviews.daily test/pageviews.weekly \
+  $HDFS_MASTER $STORAGE_LEVEL test/raw_files test/pageviews.daily test/pageviews.weekly \
   test/pageviews.monthly test/pageviews.yearly > ./logs/spark_output.log  2>&1
-  # args after .jar above == s3-bucket, hdfs-url, storage-level, & output daily, weekly, monthly, yearly HDFS files
+  # args after .jar above == hdfs-url, input HDFS file, nbr-partitions, & output daily, weekly, monthly, yearly HDFS files
 
 echo "COMPLETED PageViews Spark processing: " `date -u --rfc-822`

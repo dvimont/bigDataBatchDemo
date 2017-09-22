@@ -62,15 +62,14 @@ public class SparkDriver {
                           + "<monthly output path> <yearly output path>");
           System.exit(-1);
         }
-        String s3Bucket = args[0];
-        // String inputPath = args[1]; // not used with S3
-        String hdfsNamenode = args[1];
+        String hdfsNamenode = args[0];
         // HASH_PARTITIONER = new HashPartitioner(Integer.valueOf(args[1]));
-        if (args[2].toUpperCase().equals("MEMDISK")) {
+        if (args[1].toUpperCase().equals("MEMDISK")) {
             MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
-        } else if (args[2].toUpperCase().equals("DISK")) {
+        } else if (args[1].toUpperCase().equals("DISK")) {
             MASTER_PERSISTENCE_OPTION = StorageLevel.DISK_ONLY();
         }
+        String inputHdfsFile = args[2];
         String outputDailyHdfsFile = args[3];
         String outputWeeklyHdfsFile = args[4];
         String outputMonthlyHdfsFile = args[5];
@@ -79,8 +78,8 @@ public class SparkDriver {
         SparkConf conf = new SparkConf().setAppName("WikimediaPageViewsProcessing");
         JavaSparkContext sc = new JavaSparkContext(conf);
         JavaNewHadoopRDD<LongWritable, Text> hadoopRDD = 
-             (JavaNewHadoopRDD) sc.newAPIHadoopFile(s3Bucket,  // hdfsNamenode,
-                     // + inputPath,  // NOT USED WITH S3 -- e.g. "test/raw_files", 
+             (JavaNewHadoopRDD) sc.newAPIHadoopFile(hdfsNamenode +
+                        inputHdfsFile,  // e.g. "test/raw_files", 
                 TextInputFormat.class,  // format of the inputted file data
                 LongWritable.class,     // key class
                 Text.class,             // value class
