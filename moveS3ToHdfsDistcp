@@ -12,7 +12,7 @@ echo "STARTING download from S3 and load into HDFS" `date -u --rfc-822`
 
 rm ./logs/hdfs_move.log
 
-hadoop distcp2 s3a://wmf-insight-datalake/raw_files/$YEAR/ /test/raw_files > ./logs/hdfs_move.log  2>&1
+hadoop distcp s3a://wmf-insight-datalake/raw_files/$YEAR/ /test/raw_files > ./logs/hdfs_move.log  2>&1
 
 echo "COMPLETED download from S3 and load into HDFS" `date -u --rfc-822`
 
