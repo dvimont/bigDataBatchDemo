@@ -75,6 +75,7 @@ public class SparkDriver {
         String outputMonthlyHdfsFile = args[5];
         String outputYearlyHdfsFile = args[6];
         
+        System.out.println("Commencing DAILY processing");
         SparkConf conf = new SparkConf().setAppName("WikimediaPageViewsProcessing");
         JavaSparkContext sc = new JavaSparkContext(conf);
         JavaNewHadoopRDD<LongWritable, Text> hadoopRDD = 
@@ -144,6 +145,7 @@ public class SparkDriver {
 //                ;
 //        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
         
+        System.out.println("Commencing MONTHLY processing");
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
                      //   .partitionBy(HASH_PARTITIONER)
@@ -173,6 +175,7 @@ public class SparkDriver {
         
         monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
         
+        System.out.println("Commencing YEARLY processing");
         JavaPairRDD<String, Integer> pageViewsYearly = 
                 pageViewsMonthly.mapToPair(YEARLY_MAPPER)
                     //    .partitionBy(HASH_PARTITIONER)
