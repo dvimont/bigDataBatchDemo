@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for file in ./downloaded_files/pageviews-201501*; do echo cp "$file" "${./reorg/2015/01/file}";done
+
+echo "COMPLETED copy of files" `date -u --rfc-822`
+

@@ -2,6 +2,7 @@
 
 YEAR=$1
 
+rm ./downloaded_files/*.*
 rm -r ./downloaded_files
 mkdir ./downloaded_files
 rm -r ./reorg
@@ -31,6 +32,7 @@ done
 
 echo "Removing local reorg files"
 # rm -r ./reorg
+# rm -r ./downloaded_files
 
 echo "COMPLETED reorg of S3 for $YEAR" `date -u --rfc-822`
 
