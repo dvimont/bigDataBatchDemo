@@ -14,6 +14,7 @@ echo "Removing existing HDFS pageview spark output"
 hadoop fs -rm -r $DAILY_OUTPUT
 hadoop fs -rm -r $MONTHLY_OUTPUT
 hadoop fs -rm -r $YEARLY_OUTPUT
+hadoop fs -rm -r /debug/
 
 echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
 
