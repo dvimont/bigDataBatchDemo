@@ -155,7 +155,9 @@ public class SparkDriver {
                         .persist(MASTER_PERSISTENCE_OPTION)
                         .reduceByKey((a, b) -> a + b);
         
-        pageViewsDaily.unpersist(); // restored 9-24
+        pageViewsMonthly.saveAsTextFile(hdfsNamenode + "debug/monthlyaggregate"); 
+//        pageViewsDaily.unpersist(); // restored 9-24
+        
         
         JavaPairRDD<String, String> monthlyPagesByPopularity =
                 pageViewsMonthly
