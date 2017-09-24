@@ -4,9 +4,10 @@ EXECUTOR_MEM=$2  # 1g, 2g, 4g, etc. -- note that r4.2xlarge machines have 60GB r
 SPARK_MASTER=$3 # note that port is usually 7077
 HDFS_MASTER=$4
 YEAR=$5  # can also be entered as YEAR/MONTH if only single month to be processed for testing
+OUTPUT_DIR=/output
 
 echo "Removing existing HDFS pageview mapreduce output"
-hadoop fs -rm -r /test/pageviews.*
+hadoop fs -rm -r /$OUTPUT_DIR/pageviews.*
 
 echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
 
@@ -18,8 +19,9 @@ $SPARK_HOME/bin/spark-submit \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
   $HDFS_MASTER $STORAGE_LEVEL \
-  /pageviews.hourly/$YEAR \
-  pageviews.daily pageviews.weekly pageviews.monthly pageviews.yearly \
+  /nodelete/pageviews.hourly/$YEAR \
+  $OUTPUT_DIR/pageviews.daily/$YEAR $OUTPUT_DIRpageviews.weekly/$YEAR \
+  $OUTPUT_DIRpageviews.monthly/$YEAR  $OUTPUT_DIRpageviews.yearly/$YEAR  \
     > ./logs/spark_output.log  2>&1
 
  # args after .jar above == hdfs-url, storage-level, input HDFS file/directory,
