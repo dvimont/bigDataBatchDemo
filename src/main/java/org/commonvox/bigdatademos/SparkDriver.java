@@ -35,7 +35,9 @@ import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
 /**
- *
+ * Layout of raw data is explained here:
+ * https://wikitech.wikimedia.org/wiki/Analytics/Data_Lake/Traffic/Pageviews
+ * 
  * @author Daniel Vimont
  */
 public class SparkDriver {
@@ -83,24 +85,25 @@ public class SparkDriver {
                         inputHdfsFile,  // e.g. "test/raw_files", 
                 TextInputFormat.class,  // format of the inputted file data
                 LongWritable.class,     // key class
-                Text.class,             // value class
+                Text.class,             // value class -- raw data
                 new Configuration()     // hadoop config
         );
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
                      //   .partitionBy(HASH_PARTITIONER)
-//                        .persist(MASTER_PERSISTENCE_OPTION) // removed 9-22 after weekly removed
+                        .persist(MASTER_PERSISTENCE_OPTION) // put back 9-24
                         // reduce to daily view summary
                         .reduceByKey((a, b) -> a + b)
                         // filter out extremely low daily views
-                        .filter(tuple -> tuple._2() > 2) 
+                         .filter(tuple -> tuple._2() > 100) // filter moved to next section
 ;
+        // pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");        
         
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
                         // filter out pages w/ small daily-views
-                        .filter(tuple -> tuple._2() > 100) 
+                        // .filter(tuple -> tuple._2() > 100) // -- commented out: filter done above
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)

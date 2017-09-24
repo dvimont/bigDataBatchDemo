@@ -81,7 +81,9 @@ public class PageViewsDailyMapper
     private static boolean rawDataEntryIsValid(Context context, String sourceFile,
             long key, String rawDataEntry, boolean verboseMode) {
         // 2017-09-20 decided to initially work only with English Wikimedia pages
-        if (!rawDataEntry.startsWith("en")) {
+        // 2017-09-24 -- added space after "en" for only wikiPEDIA
+        //  see https://wikitech.wikimedia.org/wiki/Analytics/Data_Lake/Traffic/Pageviews
+        if (!rawDataEntry.startsWith("en ")) {
             return false;
         }
         if (rawDataEntry.contains("\t")) {
