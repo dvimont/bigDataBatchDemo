@@ -21,7 +21,7 @@ do
   FORMATTED_MONTH=$(printf "%02d" $m)
   echo "Deleting previously-existing HDFS file/directory in $YEARDIR/$FORMATTED_MONTH"
   hadoop fs -rm -r $YEAR_DIR/$FORMATTED_MONTH
-  echo "Submitting distcp job for $YEAR-$FORMATTED_MONTH"
+  echo "Submitting distcp job for $YEAR-$FORMATTED_MONTH" `date -u --rfc-822`
   # NOTE that distcp creates new month directory automatically!
   hadoop distcp s3a://wmf-insight-datalake/pageviews/$YEAR/$FORMATTED_MONTH $YEAR_DIR > ./logs/distcp$YEAR$FORMATTED_MONTH.log 2>&1
 done
