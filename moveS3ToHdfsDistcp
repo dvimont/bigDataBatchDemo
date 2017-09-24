@@ -20,7 +20,7 @@ do
   hadoop fs -rm -r /pageviews.hourly/$YEAR/$FORMATTED_MONTH
   echo "Submitting distcp job for $YEAR-$FORMATTED_MONTH"
   # NOTE that distcp creates new month directory automatically!
-  hadoop distcp s3a://wmf-insight-datalake/pageviews/$YEAR/$FORMATTED_MONTH /pageviews.hourly/$YEAR > distcp$YEAR$m.log 2>&1
+  hadoop distcp s3a://wmf-insight-datalake/pageviews/$YEAR/$FORMATTED_MONTH /pageviews.hourly/$YEAR > ./logs/distcp$YEAR$FORMATTED_MONTH.log 2>&1
 done
 
 echo "COMPLETED download from S3 and load into HDFS for $YEAR, months $START_MONTH thru $END_MONTH" `date -u --rfc-822`
