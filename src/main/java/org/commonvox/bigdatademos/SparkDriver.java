@@ -96,14 +96,14 @@ public class SparkDriver {
                         // reduce to daily view summary
                         .reduceByKey((a, b) -> a + b)
                         // filter out extremely low daily views
-                         .filter(tuple -> tuple._2() > 100) // filter moved to next section
-;
+                        .filter(tuple -> tuple._2() > 2)
+        ;
         // pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");        
         
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
                         // filter out pages w/ small daily-views
-                        // .filter(tuple -> tuple._2() > 100) // -- commented out: filter done above
+                        .filter(tuple -> tuple._2() > 100)
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
@@ -340,7 +340,7 @@ public class SparkDriver {
             String yearMonthDomainCode =
                     dailyKeyComponents[0].substring(0, 6) + dailyKeyComponents[0].substring(8);
 
-            // Note that keyComponents[1] is the webpage title 
+            // Note that dailyKeyComponents[1] is the webpage title 
             //   (Domain Code + webpage title uniquely identifies webpage),
             //   and keyValuePair._2 is the daily count of views for the webpage.
             return new Tuple2(yearMonthDomainCode + " " + dailyKeyComponents[1], keyValuePair._2());

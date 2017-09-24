@@ -11,9 +11,9 @@ MONTHLY_OUTPUT=$OUTPUT_DIR/pageviews.monthly/$YEAR
 YEARLY_OUTPUT=$OUTPUT_DIR/pageviews.yearly/$YEAR
 
 echo "Removing existing HDFS pageview spark output"
-hadoop fs -rm $DAILY_OUTPUT
-hadoop fs -rm $MONTHLY_OUTPUT
-hadoop fs -rm $YEARLY_OUTPUT
+hadoop fs -rm -r $DAILY_OUTPUT
+hadoop fs -rm -r $MONTHLY_OUTPUT
+hadoop fs -rm -r $YEARLY_OUTPUT
 
 echo "STARTING PageViews Spark processing: " `date -u --rfc-822`
 
