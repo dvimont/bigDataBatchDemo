@@ -121,7 +121,7 @@ public class SparkDriver {
                           // FOLLOWING REMOVED 2017-09-25, because #groupByKey does
                           //  not necessarily retain sorted order.
                         .groupByKey()
-                        .mapToPair(new CullingAggregatingMapper())
+                        .mapToPair(new FinalFormattingMapper())
                 ;
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
@@ -152,62 +152,62 @@ public class SparkDriver {
 //                ;
 //        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
         
-//        System.out.println("Commencing MONTHLY processing");
-//        JavaPairRDD<String, Integer> pageViewsMonthly = 
-//                pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-//                     //   .partitionBy(HASH_PARTITIONER)
-//                        .persist(MASTER_PERSISTENCE_OPTION)
-//                        .reduceByKey((a, b) -> a + b);
-//        
-//        pageViewsDaily.unpersist(); // restored 9-24
-//        
-//        JavaPairRDD<String, String> monthlyPagesByPopularity =
-//                pageViewsMonthly
-//                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
-//                        .mapToPair(
-//                            // new key is yyyymmnnnnnnnnn, where nnnnnnnnn is views
-//                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-//                            tuple -> new Tuple2<>(
-//                                    tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1().substring(6)))
-//                        .sortByKey(false)
-//                        .mapToPair(new DiscardMapper(6))
-//                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
-//                        .mapToPair(
-//                            // new key is yyyymm
-//                            tuple -> new Tuple2<String, String>(
-//                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
-////                        .groupByKey()
-////                        .mapToPair(CULLING_AGGREGATING_MAPPER)
-//                ;
-//        
-//        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
-//        
-//        System.out.println("Commencing YEARLY processing");
-//        JavaPairRDD<String, Integer> pageViewsYearly = 
-//                pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-//                    //    .partitionBy(HASH_PARTITIONER)
-//                        .reduceByKey((a, b) -> a + b);
-//        
-//        JavaPairRDD<String, String> yearlyPagesByPopularity =
-//                pageViewsYearly
-//                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
-//                        .mapToPair(
-//                            // new key is yyyynnnnnnnnnnnn, where nnnnnnnnnnnn is views
-//                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-//                            tuple -> new Tuple2<>(
-//                                    tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1().substring(4)))
-//                        .sortByKey(false)
-//                        .mapToPair(new DiscardMapper(4))
-//                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
-//                        .mapToPair(
-//                            // new key is yyyy
-//                            tuple -> new Tuple2<>(
-//                                    tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
-////                        .groupByKey()
-////                        .mapToPair(CULLING_AGGREGATING_MAPPER)
-//                ;
-//        
-//        yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
+        System.out.println("Commencing MONTHLY processing");
+        JavaPairRDD<String, Integer> pageViewsMonthly = 
+                pageViewsDaily.mapToPair(MONTHLY_MAPPER)
+                     //   .partitionBy(HASH_PARTITIONER)
+                        .persist(MASTER_PERSISTENCE_OPTION)
+                        .reduceByKey((a, b) -> a + b);
+        
+        pageViewsDaily.unpersist(); // restored 9-24
+        
+        JavaPairRDD<String, String> monthlyPagesByPopularity =
+                pageViewsMonthly
+                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
+                        .mapToPair(
+                            // new key is yyyymmnnnnnnnnn, where nnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1().substring(6)))
+                        .sortByKey(false)
+                        .mapToPair(new DiscardMapper(6))
+                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
+                        .mapToPair(
+                            // new key is yyyymm
+                            tuple -> new Tuple2<String, String>(
+                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
+                        .groupByKey()
+                        .mapToPair(new FinalFormattingMapper())
+                ;
+        
+        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+        
+        System.out.println("Commencing YEARLY processing");
+        JavaPairRDD<String, Integer> pageViewsYearly = 
+                pageViewsMonthly.mapToPair(YEARLY_MAPPER)
+                    //    .partitionBy(HASH_PARTITIONER)
+                        .reduceByKey((a, b) -> a + b);
+        
+        JavaPairRDD<String, String> yearlyPagesByPopularity =
+                pageViewsYearly
+                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
+                        .mapToPair(
+                            // new key is yyyynnnnnnnnnnnn, where nnnnnnnnnnnn is views
+                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1().substring(4)))
+                        .sortByKey(false)
+                        .mapToPair(new DiscardMapper(4))
+                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
+                        .mapToPair(
+                            // new key is yyyy
+                            tuple -> new Tuple2<>(
+                                    tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
+                        .groupByKey()
+                        .mapToPair(new FinalFormattingMapper())
+                ;
+        
+        yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
     }
     
@@ -290,7 +290,7 @@ public class SparkDriver {
         
     }
     
-    static class CullingAggregatingMapper
+    static class FinalFormattingMapper
             implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
         
         private TreeMap<String, String> itemMap;
