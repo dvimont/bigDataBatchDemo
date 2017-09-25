@@ -193,20 +193,22 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 6), tuple._2().substring(18) + tuple._1().substring(6)));
         
-        mappedWithMonthlyKey.saveAsTextFile(hdfsNamenode + "debug/06mappedWithMonthlyKey"); 
+        // THIS IS THE OUTPUT THAT APPEARS TO BE DEPENDABLE FOR DAILY, MONTHLY, AND YEARLY!!
+        mappedWithMonthlyKey.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+             //   "debug/06mappedWithMonthlyKey"); 
 
-        JavaPairRDD<String, Iterable<String>> groupedByKey =
-                mappedWithMonthlyKey
-                        .groupByKey(1);
-       
-        groupedByKey.saveAsTextFile(hdfsNamenode + "debug/07groupedByKey"); 
-
-        JavaPairRDD<String, String> monthlyPagesByPopularity =
-                groupedByKey
-                        .mapToPair(new CullingAggregatingMapper())
-                ;
-        
-        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+//        JavaPairRDD<String, Iterable<String>> groupedByKey =
+//                mappedWithMonthlyKey
+//                        .groupByKey(1);
+//       
+//        groupedByKey.saveAsTextFile(hdfsNamenode + "debug/07groupedByKey"); 
+//
+//        JavaPairRDD<String, String> monthlyPagesByPopularity =
+//                groupedByKey
+//                        .mapToPair(new CullingAggregatingMapper())
+//                ;
+//        
+//        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
 
     
     // ORIGINAL CODE COMMENTED OUT
