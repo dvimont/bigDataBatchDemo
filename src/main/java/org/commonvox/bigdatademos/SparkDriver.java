@@ -49,8 +49,6 @@ public class SparkDriver {
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     // private static HashPartitioner HASH_PARTITIONER;
-    private static final CullingAggregatingMapper CULLING_AGGREGATING_MAPPER =
-            new CullingAggregatingMapper();
     public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
@@ -115,9 +113,9 @@ public class SparkDriver {
                         .mapToPair(
                             // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
+                                    tuple._1().substring(0, 8), tuple._2().substring(12) + tuple._1().substring(8)))
                         .groupByKey()
-                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                        .mapToPair(new CullingAggregatingMapper())
                 ;
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
@@ -144,7 +142,7 @@ public class SparkDriver {
 //                            tuple -> new Tuple2<>(
 //                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
 //                        .groupByKey()
-//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+//                        .mapToPair(new CullingAggregatingMapper())
 //                ;
 //        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
  
@@ -193,7 +191,7 @@ public class SparkDriver {
                         .mapToPair(
                             // new key is yyyymm
                             tuple -> new Tuple2<String, String>(
-                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)));
+                                    tuple._1().substring(0, 6), tuple._2().substring(12) + tuple._1().substring(6)));
         
         mappedWithMonthlyKey.saveAsTextFile(hdfsNamenode + "debug/06mappedWithMonthlyKey"); 
 
@@ -205,7 +203,7 @@ public class SparkDriver {
 
         JavaPairRDD<String, String> monthlyPagesByPopularity =
                 groupedByKey
-                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                        .mapToPair(new CullingAggregatingMapper())
                 ;
         
         monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
@@ -237,9 +235,9 @@ public class SparkDriver {
 //                        .mapToPair(
 //                            // new key is yyyymm
 //                            tuple -> new Tuple2<String, String>(
-//                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
+//                                    tuple._1().substring(0, 6), tuple._2().substring(12) + tuple._1().substring(6)))
 //                        .groupByKey()
-//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+//                        .mapToPair(new CullingAggregatingMapper())
 //                ;
 //        
 //        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
@@ -266,9 +264,9 @@ public class SparkDriver {
 //                        .mapToPair(
 //                            // new key is yyyy
 //                            tuple -> new Tuple2<>(
-//                                    tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
+//                                    tuple._1().substring(0, 4), tuple._2().substring(0, 12) + tuple._1().substring(4)))
 //                        .groupByKey()
-//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+//                        .mapToPair(new CullingAggregatingMapper())
 //                ;
 //        
 //        yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
@@ -361,12 +359,13 @@ public class SparkDriver {
                 if (++count > POPULAR_PAGES_LIMIT) {
                     break;
                 }
+                System.out.println("*** ITEM SELECTED FOR TOP 500: " + value);
                 if (!pastFirstValue) {
                     pastFirstValue = true;
                 } else {
                     stringBuilder.append(VALUE_ARRAY_DELIMITER);
                 }
-                stringBuilder.append(value.substring(12));
+                stringBuilder.append(value);
             }
             stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
             return new Tuple2(keyValuePair._1(), stringBuilder.toString());
