@@ -111,17 +111,20 @@ public class SparkDriver {
                                     tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
                         .sortByKey(false)
                         .mapToPair(new CountingMapper(8))
+                        // each partition will retain only its most popular!
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
                         .mapToPair(
-                            // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
+                            // new key is yyyymmdd (day) & counting-variable stripped from value
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                        .groupByKey()
-                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                                    tuple._1().substring(0, 8), tuple._2().substring(12) + tuple._1().substring(8)))
+                          // FOLLOWING REMOVED 2017-09-25, because #groupByKey does
+                          //  not necessarily retain sorted order.
+//                        .groupByKey()
+//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
-        
+// WEEKLY PROCESSING (PERMANENTLY?) REMOVED        
 //        JavaPairRDD<String, Integer> pageViewsWeekly = 
 //                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
 //                      //  .partitionBy(HASH_PARTITIONER)
@@ -169,11 +172,11 @@ public class SparkDriver {
                         .mapToPair(new CountingMapper(6))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
                         .mapToPair(
-                            // new key is yyyymm
+                            // new key is yyyymm & counting-variable stripped from value
                             tuple -> new Tuple2<String, String>(
-                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
-                        .groupByKey()
-                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                                    tuple._1().substring(0, 6), tuple._2().substring(12) + tuple._1().substring(6)))
+//                        .groupByKey()
+//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
         
         monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
@@ -196,11 +199,11 @@ public class SparkDriver {
                         .mapToPair(new CountingMapper(4))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
                         .mapToPair(
-                            // new key is yyyy
+                            // new key is yyyy & counting-variable stripped from value
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
-                        .groupByKey()
-                        .mapToPair(CULLING_AGGREGATING_MAPPER)
+                                    tuple._1().substring(0, 4), tuple._2().substring(12) + tuple._1().substring(4)))
+//                        .groupByKey()
+//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
         
         yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
