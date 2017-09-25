@@ -44,13 +44,12 @@ public class SparkDriver {
     
 //    private static int displayCount = 0;
     private static final int POPULAR_PAGES_LIMIT = 500;
+    private static final String DISCARD_INDICATOR = "&$";
     private static final DailyMapper DAILY_MAPPER = new DailyMapper();
     private static final WeeklyMapper WEEKLY_MAPPER = new WeeklyMapper();
     private static final MonthlyMapper MONTHLY_MAPPER = new MonthlyMapper();
     private static final YearlyMapper YEARLY_MAPPER = new YearlyMapper();
     // private static HashPartitioner HASH_PARTITIONER;
-    private static final CullingAggregatingMapper CULLING_AGGREGATING_MAPPER =
-            new CullingAggregatingMapper();
     public static final String VALUE_ARRAY_OPEN_TAG = "[&[";
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
@@ -110,13 +109,13 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1().substring(8)))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper(8))
+                        .mapToPair(new DiscardMapper(8))
                         // each partition will retain only its most popular!
-                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
+                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
                         .mapToPair(
-                            // new key is yyyymmdd (day) & counting-variable stripped from value
+                            // new key is yyyymmdd (day)
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8), tuple._2().substring(12) + tuple._1().substring(8)))
+                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
                           // FOLLOWING REMOVED 2017-09-25, because #groupByKey does
                           //  not necessarily retain sorted order.
 //                        .groupByKey()
@@ -169,12 +168,12 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1().substring(6)))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper(6))
-                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
+                        .mapToPair(new DiscardMapper(6))
+                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
                         .mapToPair(
-                            // new key is yyyymm & counting-variable stripped from value
+                            // new key is yyyymm
                             tuple -> new Tuple2<String, String>(
-                                    tuple._1().substring(0, 6), tuple._2().substring(12) + tuple._1().substring(6)))
+                                    tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
 //                        .groupByKey()
 //                        .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
@@ -196,12 +195,12 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1().substring(4)))
                         .sortByKey(false)
-                        .mapToPair(new CountingMapper(4))
-                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
+                        .mapToPair(new DiscardMapper(4))
+                        .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
                         .mapToPair(
-                            // new key is yyyy & counting-variable stripped from value
+                            // new key is yyyy
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 4), tuple._2().substring(12) + tuple._1().substring(4)))
+                                    tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
 //                        .groupByKey()
 //                        .mapToPair(CULLING_AGGREGATING_MAPPER)
                 ;
@@ -261,52 +260,58 @@ public class SparkDriver {
        }
     }
     
-    static class CountingMapper
+    static class DiscardMapper
             implements PairFunction<Tuple2<String, String>, String, String> {
         int counter = 0;
         String currentDayKey = "";
         final int timestampLength;
         
-        public CountingMapper(int timestampLength) {
+        public DiscardMapper(int timestampLength) {
             this.timestampLength = timestampLength;
         }
         
         @Override
         public Tuple2<String, String> call(Tuple2<String, String> keyValuePair)
                 throws Exception {
-            if (!currentDayKey.equals(keyValuePair._2().substring(0, timestampLength))) {
-                currentDayKey = keyValuePair._2().substring(0, timestampLength);
+            if (!currentDayKey.equals(keyValuePair._1().substring(0, timestampLength))) {
+                currentDayKey = keyValuePair._1().substring(0, timestampLength);
                 counter = 0;
             }
-            return new Tuple2(keyValuePair._1(), String.format("%012d", ++counter) + keyValuePair._2());
+            String outputtedValue;
+            if (++counter > POPULAR_PAGES_LIMIT) {
+                outputtedValue = DISCARD_INDICATOR + keyValuePair._2();
+            } else {
+                outputtedValue = keyValuePair._2();
+            }
+            return new Tuple2(keyValuePair._1(), outputtedValue);
         }
         
     }
     
-    static class CullingAggregatingMapper
-            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
-        @Override
-        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
-                throws Exception {
-            int count = 0;
-            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
-            boolean pastFirstValue = false;
-            for (String value : keyValuePair._2()) {
-                // only want the top popular pages
-                if (++count > POPULAR_PAGES_LIMIT) {
-                    break;
-                }
-                if (!pastFirstValue) {
-                    pastFirstValue = true;
-                } else {
-                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
-                }
-                stringBuilder.append(value.substring(12));
-            }
-            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
-            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
-        }
-    }
+//    static class CullingAggregatingMapper
+//            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
+//        @Override
+//        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
+//                throws Exception {
+//            int count = 0;
+//            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
+//            boolean pastFirstValue = false;
+//            for (String value : keyValuePair._2()) {
+//                // only want the top popular pages
+//                if (++count > POPULAR_PAGES_LIMIT) {
+//                    break;
+//                }
+//                if (!pastFirstValue) {
+//                    pastFirstValue = true;
+//                } else {
+//                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
+//                }
+//                stringBuilder.append(value.substring(12));
+//            }
+//            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
+//            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
+//        }
+//    }
     
     static class WeeklyMapper
              implements PairFunction<Tuple2<String, Integer>, String, Integer> {
