@@ -195,18 +195,18 @@ public class SparkDriver {
         
         mappedWithMonthlyKey.saveAsTextFile(hdfsNamenode + "debug/06mappedWithMonthlyKey"); 
 
-        JavaPairRDD<String, Iterable<String>> monthlyPagesByPopularity =
+        JavaPairRDD<String, Iterable<String>> groupedByKey =
                 mappedWithMonthlyKey
                         .groupByKey();
        
-//        groupedByKey.saveAsTextFile(hdfsNamenode + "debug/07groupedByKey"); 
-//
+        groupedByKey.saveAsTextFile(hdfsNamenode + "debug/07groupedByKey"); 
+
 //        JavaPairRDD<String, String> monthlyPagesByPopularity =
 //                groupedByKey
 //                        .mapToPair(new CullingAggregatingMapper())
 //                ;
         
-        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+//        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
 
     
     // ORIGINAL CODE COMMENTED OUT
