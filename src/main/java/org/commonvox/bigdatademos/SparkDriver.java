@@ -197,7 +197,7 @@ public class SparkDriver {
 
         JavaPairRDD<String, Iterable<String>> groupedByKey =
                 mappedWithMonthlyKey
-                        .groupByKey();
+                        .groupByKey(1);
        
         groupedByKey.saveAsTextFile(hdfsNamenode + "debug/07groupedByKey"); 
 
