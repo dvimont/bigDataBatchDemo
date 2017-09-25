@@ -98,7 +98,7 @@ public class SparkDriver {
         ;
         // pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");        
         
-        JavaPairRDD<String, Iterable<String>> dailyPagesByPopularity =
+        JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
                         // filter out pages w/ small daily-views
                         .filter(tuple -> tuple._2() > 100)
@@ -111,11 +111,11 @@ public class SparkDriver {
                         .mapToPair(new CountingMapper(8))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
                         .mapToPair(
-                            // new key is yyyymmdd (day), leading counter and day are trimmed from value
+                            // new key is yyyymmdd (day) -- BIG QUESTION: will sorted order be maintained?
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8), tuple._2().substring(20) + tuple._1().substring(8)))
+                                    tuple._1().substring(0, 8), tuple._2().substring(12) + tuple._1().substring(8)))
                         .groupByKey()
-                       // .mapToPair(new CullingAggregatingMapper())
+                        .mapToPair(new CullingAggregatingMapper())
                 ;
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
@@ -189,7 +189,7 @@ public class SparkDriver {
         JavaPairRDD<String, String> mappedWithMonthlyKey =
                 counterMapperFiltered
                         .mapToPair(
-                            // new key is yyyymm; strip away the first 18 characters of tuple._2 value
+                            // new key is yyyymm; strip away the first 18 characters of tuple._2 
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 6), tuple._2().substring(18) + tuple._1().substring(6)));
         
@@ -197,16 +197,16 @@ public class SparkDriver {
 
         JavaPairRDD<String, Iterable<String>> groupedByKey =
                 mappedWithMonthlyKey
-                        .groupByKey();
+                        .groupByKey(1);
        
         groupedByKey.saveAsTextFile(hdfsNamenode + "debug/07groupedByKey"); 
 
-//        JavaPairRDD<String, String> monthlyPagesByPopularity =
-//                groupedByKey
-//                        .mapToPair(new CullingAggregatingMapper())
-//                ;
+        JavaPairRDD<String, String> monthlyPagesByPopularity =
+                groupedByKey
+                        .mapToPair(new CullingAggregatingMapper())
+                ;
         
-//        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
+        monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
 
     
     // ORIGINAL CODE COMMENTED OUT
@@ -346,31 +346,31 @@ public class SparkDriver {
         
     }
     
-//    static class CullingAggregatingMapper
-//            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
-//        @Override
-//        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
-//                throws Exception {
-//            int count = 0;
-//            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
-//            boolean pastFirstValue = false;
-//            for (String value : keyValuePair._2()) {
-//                // only want the top popular pages
-//                if (++count > POPULAR_PAGES_LIMIT) {
-//                    break;
-//                }
-//                System.out.println("*** ITEM SELECTED FOR TOP 500: " + value);
-//                if (!pastFirstValue) {
-//                    pastFirstValue = true;
-//                } else {
-//                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
-//                }
-//                stringBuilder.append(value);
-//            }
-//            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
-//            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
-//        }
-//    }
+    static class CullingAggregatingMapper
+            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
+        @Override
+        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
+                throws Exception {
+            int count = 0;
+            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
+            boolean pastFirstValue = false;
+            for (String value : keyValuePair._2()) {
+                // only want the top popular pages
+                if (++count > POPULAR_PAGES_LIMIT) {
+                    break;
+                }
+                //System.out.println("*** ITEM SELECTED FOR TOP 500: " + value);
+                if (!pastFirstValue) {
+                    pastFirstValue = true;
+                } else {
+                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
+                }
+                stringBuilder.append(value);
+            }
+            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
+            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
+        }
+    }
     
     static class WeeklyMapper
              implements PairFunction<Tuple2<String, Integer>, String, Integer> {
