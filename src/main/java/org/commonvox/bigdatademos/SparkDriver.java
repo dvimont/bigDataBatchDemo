@@ -106,9 +106,9 @@ public class SparkDriver {
                         // .filter(tuple -> tuple._2() > 100) // -- commented out: filter done above
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
-                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
+                            //   key,value example -->> (20160929000001871863,en Main_Page)
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
+                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1().substring(8)))
                         .sortByKey(false)
                         .mapToPair(new CountingMapper(8))
                         // each partition will retain only its most popular!
@@ -167,7 +167,7 @@ public class SparkDriver {
                             // new key is yyyymmnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1()))
+                                    tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1().substring(6)))
                         .sortByKey(false)
                         .mapToPair(new CountingMapper(6))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
@@ -194,7 +194,7 @@ public class SparkDriver {
                             // new key is yyyynnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,20160929en Main_Page)
                             tuple -> new Tuple2<>(
-                                    tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1()))
+                                    tuple._1().substring(0, 4) + String.format("%012d", tuple._2()), tuple._1().substring(4)))
                         .sortByKey(false)
                         .mapToPair(new CountingMapper(4))
                         .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= 500))
