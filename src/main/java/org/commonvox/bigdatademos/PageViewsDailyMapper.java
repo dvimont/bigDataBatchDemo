@@ -86,6 +86,10 @@ public class PageViewsDailyMapper
         if (!rawDataEntry.startsWith("en ")) {
             return false;
         }
+        // Curious page with just hyphen as URL extension should be filtered out!
+        if (rawDataEntry.substring(3, 5).equals("- ")) {
+            return false;
+        }
         if (rawDataEntry.contains("\t")) {
             if (verboseMode) {
                 System.out.println(
