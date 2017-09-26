@@ -3,7 +3,7 @@ STORAGE_LEVEL=$1 # MEMDISK or DISK
 EXECUTOR_MEM=$2  # 1g, 2g, 4g, etc. -- note that r4.2xlarge machines have 60GB ram
 SPARK_MASTER=$3 # note that port is usually 7077
 HDFS_MASTER=$4
-YEAR=$5  # normally entered as "2016/*" for full year or "2016/10" for testing of one month
+YEAR=$5  # normally entered as "2016" for full year or "2016/10" for testing of one month
 OUTPUT_DIR=/output
 DAILY_OUTPUT=$OUTPUT_DIR/pageviews.daily/$YEAR
 WEEKLY_OUTPUT=$OUTPUT_DIR/pageviews.weekly/$YEAR # weekly processing discontinued
@@ -26,7 +26,7 @@ $SPARK_HOME/bin/spark-submit \
   --class org.commonvox.bigdatademos.SparkDriver \
   ./target/bigdatademo01-1.0-SNAPSHOT.jar \
   $HDFS_MASTER $STORAGE_LEVEL \
-  /nodelete/pageviews.hourly/$YEAR \
+  /nodelete/pageviews.hourly/$YEAR/* \
   $DAILY_OUTPUT $WEEKLY_OUTPUT \
   $MONTHLY_OUTPUT $YEARLY_OUTPUT  \
     > ./logs/spark_output.log  2>&1
