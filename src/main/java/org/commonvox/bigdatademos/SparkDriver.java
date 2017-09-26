@@ -365,17 +365,21 @@ public class SparkDriver {
                     stringBuilder.append(",");
                 }
                 stringBuilder.append(SimpleJson.OBJECT_OPEN);
-                String[] tokens = entry.getValue().split(" ");
-                String pageId = tokens[1].substring(0, tokens[1].length() - 12);
-                String viewsString = tokens[1].substring(tokens[1].length() - 12);
-                stringBuilder.append(
-                        SimpleJson.nameValuePair("page", "https://en.wikipedia.org/wiki/" + pageId) );
+                String pageId = entry.getValue();
+                String[] tokens = pageId.split(" ");
+                String pageUrlExtension = tokens[1].substring(0, tokens[1].length() - 12);
+                String viewsWithLeadingZeroes = tokens[1].substring(tokens[1].length() - 12);
+                String views = Integer.valueOf(viewsWithLeadingZeroes).toString();
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "pageId", pageId));
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "url", "https://en.wikipedia.org/wiki/" + pageUrlExtension));
                 stringBuilder.append(",");
-                stringBuilder.append(
-                        SimpleJson.nameValuePair("topic", pageId.replaceAll("_", " ")));
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "topic", pageUrlExtension.replaceAll("_", " ")));
                 stringBuilder.append(",");
-                stringBuilder.append(
-                         SimpleJson.nameValuePair("views", Integer.valueOf(viewsString).toString()));
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "views", views));
                 stringBuilder.append(SimpleJson.OBJECT_CLOSE);
             }
             stringBuilder.append(SimpleJson.ARRAY_CLOSE);
