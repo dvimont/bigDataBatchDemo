@@ -358,18 +358,21 @@ public class SparkDriver {
             stringBuilder.append(SimpleJson.ARRAY_OPEN);
             boolean pastFirstValue = false;
             for (Entry<String, String> entry : descendingMap.entrySet()) {
+                // Following line for debugging
+//                stringBuilder.append("<Producing ").append(descendingMap.size()).append(" entries>");
                 if (!pastFirstValue) {
                     pastFirstValue = true;
                 } else {
                     stringBuilder.append(",");
                 }
+                // Following line for debugging
+//                stringBuilder.append("<").append(entry.getValue()).append(">");
                 stringBuilder.append(SimpleJson.OBJECT_OPEN);
                 String[] tokens = entry.getValue().split(" ");
                 String pageId = tokens[1].substring(0, tokens[1].length() - 12);
                 String viewsString = tokens[1].substring(tokens[1].length() - 12);
-                stringBuilder.append("\"page\":\"https://en.wikipedia.org/wiki/").append(pageId).append("\"");
-                      //  SimpleJson.nameValuePair("page", "https://en.wikipedia.org/wiki/" + pageId)
-                // );
+                stringBuilder.append(// "\"page\":\"https://en.wikipedia.org/wiki/").append(pageId).append("\"");
+                        SimpleJson.nameValuePair("page", "https://en.wikipedia.org/wiki/" + pageId) );
                 stringBuilder.append(",");
                 stringBuilder.append(
                         SimpleJson.nameValuePair("topic", pageId.replaceAll("_", " ")));

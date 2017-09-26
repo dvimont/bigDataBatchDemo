@@ -31,33 +31,32 @@ public class SimpleJson {
     public static final String ARRAY_OPEN = "[";
     public static final String ARRAY_CLOSE = "]";
     public static final String DELIMITER = ",";
-    private static final StringBuilder STRING_BUILDER = new StringBuilder();
     
     public static String object(String text) {
-        STRING_BUILDER.setLength(0);
-        return STRING_BUILDER.append("{").append(text).append("}").toString();
+        StringBuilder stringBuilder = new StringBuilder();
+        return stringBuilder.append("{").append(text).append("}").toString();
     }
     
     public static String nameValuePair(String name, String value) {
-        STRING_BUILDER.setLength(0);
-        return STRING_BUILDER.append("\"").append(name).append("\":\"")
+        StringBuilder stringBuilder = new StringBuilder();
+        return stringBuilder.append("\"").append(name).append("\":\"")
                 .append(value).append("\"").toString();
     }
     
     public static String array(Iterable<String> entries) {
-        STRING_BUILDER.setLength(0);
-        STRING_BUILDER.append("[");
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("[");
         boolean pastFirst = false;
         for (String entry : entries) {
             if (!pastFirst) {
                 pastFirst = true;
             } else {
-                STRING_BUILDER.append(",");
+                stringBuilder.append(",");
             }
-            STRING_BUILDER.append(entry);
+            stringBuilder.append(entry);
         }
-        STRING_BUILDER.append("]");
-        return STRING_BUILDER.toString();
+        stringBuilder.append("]");
+        return stringBuilder.toString();
     }
     
 }
