@@ -373,6 +373,7 @@ public class SparkDriver {
                 String views = Integer.valueOf(viewsWithLeadingZeroes).toString();
                 stringBuilder.append(SimpleJson.nameValuePair(
                         "pageId", pageId));
+                stringBuilder.append(",");
                 stringBuilder.append(SimpleJson.nameValuePair(
                         "url", "https://en.wikipedia.org/wiki/" + pageUrlExtension));
                 stringBuilder.append(",");
