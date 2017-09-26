@@ -121,7 +121,7 @@ public class SparkDriver {
                           // FOLLOWING REMOVED 2017-09-25, because #groupByKey does
                           //  not necessarily retain sorted order.
                         .groupByKey()
-                        .mapToPair(new FinalFormattingMapper())
+                        .mapToPair(new JsonMapper())
                 ;
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
@@ -177,7 +177,7 @@ public class SparkDriver {
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
                         .groupByKey()
-                        .mapToPair(new FinalFormattingMapper())
+                        .mapToPair(new JsonMapper())
                 ;
         
         monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
@@ -204,7 +204,7 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
                         .groupByKey()
-                        .mapToPair(new FinalFormattingMapper())
+                        .mapToPair(new JsonMapper())
                 ;
         
         yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
@@ -331,7 +331,66 @@ public class SparkDriver {
             }
           }
         }
+    }
+    
+    static class JsonMapper
+            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
         
+        private TreeMap<String, String> itemMap;
+        
+        @Override
+        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
+                throws Exception {
+            // Assemble TreeMap with most popular items up to size limit of POPULAR_PAGES_LIMIT
+            //   Note that #groupByKey necessitates this because it can destroy the ordering from the sort
+            itemMap = new TreeMap<>();
+            for (String value : keyValuePair._2()) {
+                // addEntry passed (key == viewCount, value == complete record)
+                addEntry(value.substring(value.length() - 12), value);
+            }
+            TreeMap<String, String> descendingMap = new TreeMap(Collections.reverseOrder());
+            descendingMap.putAll(itemMap);
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(SimpleJson.OBJECT_OPEN);
+            stringBuilder.append(SimpleJson.nameValuePair("interval", keyValuePair._1()));
+            stringBuilder.append(",");
+            stringBuilder.append(SimpleJson.ARRAY_OPEN);
+            boolean pastFirstValue = false;
+            for (Entry<String, String> entry : descendingMap.entrySet()) {
+                if (!pastFirstValue) {
+                    pastFirstValue = true;
+                } else {
+                    stringBuilder.append(",");
+                }
+                stringBuilder.append(SimpleJson.OBJECT_OPEN);
+                String[] tokens = entry.getValue().split(" ");
+                String pageId = tokens[1].substring(0, tokens[1].length() - 12);
+                String viewsString = tokens[1].substring(tokens[1].length() - 12);
+                stringBuilder.append(
+                        SimpleJson.nameValuePair("page", "https://en.wikipedia.org/wiki/" + pageId));
+                stringBuilder.append(",");
+                stringBuilder.append(
+                        SimpleJson.nameValuePair("topic", pageId.replaceAll("_", " ")));
+                stringBuilder.append(",");
+                stringBuilder.append(
+                         SimpleJson.nameValuePair("views", Integer.valueOf(viewsString).toString()));
+                stringBuilder.append(SimpleJson.OBJECT_CLOSE);
+            }
+            stringBuilder.append(SimpleJson.ARRAY_CLOSE);
+            stringBuilder.append(SimpleJson.OBJECT_CLOSE);
+            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
+        }
+        
+        private void addEntry(String key, String value) {
+          if (itemMap.size() < POPULAR_PAGES_LIMIT) {
+            itemMap.put(key, value);
+          } else {
+            if (key.compareTo(itemMap.firstEntry().getKey()) > 0) {
+              itemMap.pollFirstEntry(); // remove earliest entry
+              itemMap.put(key, value);
+            }
+          }
+        }
     }
     
     static class WeeklyMapper
