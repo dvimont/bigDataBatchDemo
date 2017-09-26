@@ -40,8 +40,8 @@ public class SimpleJson {
     
     public static String nameValuePair(String name, String value) {
         STRING_BUILDER.setLength(0);
-        return STRING_BUILDER.append("\"").append(name).append("\":")
-                .append("\"").append(value).append("\"").toString();
+        return STRING_BUILDER.append("\"").append(name).append("\":\"")
+                .append(value).append("\"").toString();
     }
     
     public static String array(Iterable<String> entries) {

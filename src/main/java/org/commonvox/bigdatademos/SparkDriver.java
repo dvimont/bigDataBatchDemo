@@ -350,6 +350,7 @@ public class SparkDriver {
             }
             TreeMap<String, String> descendingMap = new TreeMap(Collections.reverseOrder());
             descendingMap.putAll(itemMap);
+            
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(SimpleJson.OBJECT_OPEN);
             stringBuilder.append(SimpleJson.nameValuePair("interval", keyValuePair._1()));
@@ -366,8 +367,9 @@ public class SparkDriver {
                 String[] tokens = entry.getValue().split(" ");
                 String pageId = tokens[1].substring(0, tokens[1].length() - 12);
                 String viewsString = tokens[1].substring(tokens[1].length() - 12);
-                stringBuilder.append(
-                        SimpleJson.nameValuePair("page", "https://en.wikipedia.org/wiki/" + pageId));
+                stringBuilder.append("\"page\":\"https://en.wikipedia.org/wiki/").append(pageId).append("\"");
+                      //  SimpleJson.nameValuePair("page", "https://en.wikipedia.org/wiki/" + pageId)
+                // );
                 stringBuilder.append(",");
                 stringBuilder.append(
                         SimpleJson.nameValuePair("topic", pageId.replaceAll("_", " ")));
@@ -382,7 +384,7 @@ public class SparkDriver {
         }
         
         private void addEntry(String key, String value) {
-          if (itemMap.size() < POPULAR_PAGES_LIMIT) {
+          if (itemMap.size() <  5) {    // POPULAR_PAGES_LIMIT) {
             itemMap.put(key, value);
           } else {
             if (key.compareTo(itemMap.firstEntry().getKey()) > 0) {
