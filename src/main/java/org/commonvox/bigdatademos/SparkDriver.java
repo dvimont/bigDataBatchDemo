@@ -358,15 +358,11 @@ public class SparkDriver {
             stringBuilder.append(SimpleJson.ARRAY_OPEN);
             boolean pastFirstValue = false;
             for (Entry<String, String> entry : descendingMap.entrySet()) {
-                // Following line for debugging
-//                stringBuilder.append("<Producing ").append(descendingMap.size()).append(" entries>");
                 if (!pastFirstValue) {
                     pastFirstValue = true;
                 } else {
                     stringBuilder.append(",");
                 }
-                // Following line for debugging
-//                stringBuilder.append("<").append(entry.getValue()).append(">");
                 stringBuilder.append(SimpleJson.OBJECT_OPEN);
                 String[] tokens = entry.getValue().split(" ");
                 String pageId = tokens[1].substring(0, tokens[1].length() - 12);
@@ -387,7 +383,7 @@ public class SparkDriver {
         }
         
         private void addEntry(String key, String value) {
-          if (itemMap.size() <  5) {    // POPULAR_PAGES_LIMIT) {
+          if (itemMap.size() <  POPULAR_PAGES_LIMIT) {
             itemMap.put(key, value);
           } else {
             if (key.compareTo(itemMap.firstEntry().getKey()) > 0) {
