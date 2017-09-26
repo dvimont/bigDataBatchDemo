@@ -365,8 +365,9 @@ public class SparkDriver {
                     stringBuilder.append(",");
                 }
                 stringBuilder.append(SimpleJson.OBJECT_OPEN);
-                String pageId = entry.getValue();
-                String[] tokens = pageId.split(" ");
+                String pageId = entry.getValue()
+                        .substring(0, entry.getValue().length() - 12);
+                String[] tokens = entry.getValue().split(" ");
                 String pageUrlExtension = tokens[1].substring(0, tokens[1].length() - 12);
                 String viewsWithLeadingZeroes = tokens[1].substring(tokens[1].length() - 12);
                 String views = Integer.valueOf(viewsWithLeadingZeroes).toString();
