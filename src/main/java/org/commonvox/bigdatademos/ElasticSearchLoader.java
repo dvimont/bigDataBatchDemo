@@ -40,8 +40,8 @@ import org.elasticsearch.common.xcontent.XContentType;
  */
 public class ElasticSearchLoader {
 
-    private static String esIndex; // e.g. "pageviews";
-    private static String esType; // e.g. "interval";
+    private static String esIndex; 
+    private static String esType; 
     
     /**
      * @param args the command line arguments
@@ -53,8 +53,8 @@ public class ElasticSearchLoader {
                   + "<elasticSearch-type> <input-directory>");
           System.exit(-1);
         }
-        esIndex = args[0];
-        esType = args[1];
+        esIndex = args[0];               // e.g. "pageviews";
+        esType = args[1];                // e.g. "interval";
         String inputDirectory = args[2]; // e.g. "./sampleJsonForES/"
         loadJsonToES(inputDirectory);
     }
