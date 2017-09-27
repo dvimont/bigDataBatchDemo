@@ -55,9 +55,8 @@ public class ElasticSearchLoader {
         }
         esIndex = args[0];
         esType = args[1];
-        String inputDirectory = args[3];
+        String inputDirectory = args[3]; // e.g. "./sampleJsonForES/"
         loadJsonToES(inputDirectory);
-        loadJsonToES("./sampleJsonForES/");
     }
     
     private static void loadJsonToES (String inputDirectory) throws IOException {
