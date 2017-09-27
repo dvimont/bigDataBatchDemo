@@ -60,7 +60,7 @@ public class SparkDriver {
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
           System.err.println(
-                  "Usage: PageViewsDaily <hdfs-master url> <partition-count> <input path> "
+                  "Usage: PageViewsDaily <hdfs-master url> <storage-level> <input path> "
                           + "<daily output path> <weekly output path> "
                           + "<monthly output path> <yearly output path>");
           System.exit(-1);
