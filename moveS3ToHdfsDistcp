@@ -16,7 +16,7 @@ echo "STARTING download from S3 and load into HDFS for $YEAR, months $START_MONT
 
 rm ./logs/hdfs_move.log
 
-for (( m=$START_MONTH; m<=$END_MONTH; m++ ))
+for (( m=$START_MONTH; m<=10#$END_MONTH; m++ ))
 do
   FORMATTED_MONTH=$(printf "%02d" $m)
   echo "Deleting previously-existing HDFS file/directory in $YEARDIR/$FORMATTED_MONTH"

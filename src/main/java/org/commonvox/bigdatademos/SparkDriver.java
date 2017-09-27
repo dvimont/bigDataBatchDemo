@@ -170,8 +170,10 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1().substring(6)))
                         .sortByKey(false)
+                        // collapse next 2 into single filter if possible!!
                         .mapToPair(new DiscardMapper(6))
                         .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
+                        // investigate collapsing the next two (or three) steps into a single #reduceByKey step
                         .mapToPair(
                             // new key is yyyymm
                             tuple -> new Tuple2<String, String>(

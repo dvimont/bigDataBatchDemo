@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ES_INDEX=$1
+ES_TYPE=$2
+INPUT_DIR=$3
+rm ./logs/hdfs_move.log
+
+echo "Bulk loading JSON docs to ElasticSearch; recursively reading files in directory: $INPUT_DIR"  `date -u --rfc-822`
+
+mvn exec:java -Dexec.mainClass="org.commonvox.bigdatademos.ElasticSearchLoader" -Dexec.args="$ES_INDEX $ES_TYPE $INPUT_DIR" > ./logs/loadElastic.log
+
+echo "COMPLETED bulk loading JSON docs to ElasticSearch;" `date -u --rfc-822`
