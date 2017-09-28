@@ -1,0 +1,14 @@
+#!/bin/bash
+
+INPUT_HDFS_DIR=$1  # e.g., /output/
+OUTPUT_NAME=$2   # e.g., xferToES
+LOG_FILE=zipForES.log
+
+rm ./logs/$LOG_FILE
+rm -r ./$OUTPUT_NAME
+mkdir $OUTPUT_NAME
+
+echo "Extracting HDFS directory $INPUT_HDFS_DIR and compressing into file $OUTPUT_NAME.tar.gz" `date -u --rfc-822`
+hadoop fs -copyToLocal INPUT_HDFS_DIR ./$OUTPUT_NAME && tar -cvf $OUTPUT_NAME.tar ./$OUTPUT_NAME && gzip $OUTPUT_NAME.tar && rm -r $OUTPUT_NAME
+echo "Extraction and compression completed to file $OUTPUT_FILE_PREFIX.tar.gz" `date -u --rfc-822`
+
