@@ -87,7 +87,7 @@ public class PageViewsDailyMapper
             return false;
         }
         // Curious page with just hyphen as URL extension should be filtered out!
-        if (rawDataEntry.substring(3, 5).equals("- ")) {
+        if (rawDataEntry.length() > 5 && rawDataEntry.substring(3, 5).equals("- ")) {
             return false;
         }
         if (rawDataEntry.contains("\t")) {
