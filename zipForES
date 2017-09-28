@@ -11,6 +11,6 @@ mkdir $OUTPUT_NAME
 mkdir $EXPORT_DIR
 
 echo "Extracting HDFS directory $INPUT_HDFS_DIR and compressing into file $OUTPUT_NAME.tar.gz" `date -u --rfc-822`
-hadoop fs -copyToLocal $INPUT_HDFS_DIR ./$OUTPUT_NAME && tar -cvf $OUTPUT_NAME.tar ./$OUTPUT_NAME && gzip $OUTPUT_NAME.tar && rm -r $OUTPUT_NAME && mv $OUTPUT_NAME.tar.gz $EXPORT_DIR
+hadoop fs -copyToLocal $INPUT_HDFS_DIR ./$OUTPUT_NAME && tar -cvf $OUTPUT_NAME.tar ./$OUTPUT_NAME && gzip $OUTPUT_NAME.tar && rm -r $OUTPUT_NAME && mv $OUTPUT_NAME.tar.gz $EXPORT_DIR > $LOG_FILE 2>&1
 echo "Extraction and compression completed to file $EXPORT_DIR/$OUTPUT_NAME.tar.gz" `date -u --rfc-822`
 
