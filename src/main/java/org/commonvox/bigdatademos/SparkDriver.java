@@ -92,8 +92,8 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                     //   .partitionBy(HASH_PARTITIONER)
-                        .persist(MASTER_PERSISTENCE_OPTION) // put back 9-24
+                        //   .partitionBy(HASH_PARTITIONER)
+                        // .persist(MASTER_PERSISTENCE_OPTION) // put back 9-24
                         // reduce to daily view summary
                         .reduceByKey((a, b) -> a + b)
                         // filter out extremely low daily views
@@ -118,8 +118,6 @@ public class SparkDriver {
                             // new key is yyyymmdd (day)
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                          // FOLLOWING REMOVED 2017-09-25, because #groupByKey does
-                          //  not necessarily retain sorted order.
                         .groupByKey()
                         .mapToPair(new JsonMapper())
                 ;
@@ -156,7 +154,7 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
                      //   .partitionBy(HASH_PARTITIONER)
-                        .persist(MASTER_PERSISTENCE_OPTION)
+                     //   .persist(MASTER_PERSISTENCE_OPTION)
                         .reduceByKey((a, b) -> a + b);
         
         pageViewsDaily.unpersist(); // restored 9-24
