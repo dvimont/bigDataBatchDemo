@@ -114,7 +114,6 @@ public class ElasticSearchLoader {
                 responseStatus = itemResponse.status().name();
                 responseResult = itemResponse.getResult().toString();
             }
-            itemResponse.status();
             System.out.println("**** Response status: <" + responseStatus
                     + ">. Details: <" + responseResult + ">");
         }
