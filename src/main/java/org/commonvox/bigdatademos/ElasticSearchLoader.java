@@ -126,17 +126,13 @@ public class ElasticSearchLoader {
     }
     
     
-    // the following from: https://stackoverflow.com/questions/10174898/how-to-check-whether-a-given-string-is-valid-json-in-java
+    // the following adapted from: https://stackoverflow.com/questions/10174898/how-to-check-whether-a-given-string-is-valid-json-in-java
     
     public static boolean isValidJSON(String test) {
         try {
             jsonParser.parse(test);
         } catch (ParseException ex) {
-    //        try {
-    //            new JSONArray(test);
-    //        } catch (JSONException ex1) {
-    //            return false;
-    //        }
+            return false;
         }
         return true;
     }    
