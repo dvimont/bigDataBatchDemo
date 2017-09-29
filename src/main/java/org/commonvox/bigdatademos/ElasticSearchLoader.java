@@ -105,9 +105,18 @@ public class ElasticSearchLoader {
         System.out.println("** Bulk responses start...");
         for (BulkItemResponse bulkItemResponse : responses) { 
             DocWriteResponse itemResponse = bulkItemResponse.getResponse();
+            String responseStatus;
+            String responseResult;
+            if (itemResponse == null) {
+                responseStatus = "null";
+                responseResult = "null";
+            } else {
+                responseStatus = itemResponse.status().name();
+                responseResult = itemResponse.getResult().toString();
+            }
             itemResponse.status();
-            System.out.println("**** Response status: <" + itemResponse.status()
-                    + ">. Details: <" + itemResponse.getResult().toString() + ">");
+            System.out.println("**** Response status: <" + responseStatus
+                    + ">. Details: <" + responseResult + ">");
         }
         System.out.println("** Bulk responses end");
     }
