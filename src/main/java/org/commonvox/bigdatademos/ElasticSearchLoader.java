@@ -31,8 +31,8 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-
-
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  *
@@ -42,6 +42,8 @@ public class ElasticSearchLoader {
 
     private static String esIndex; 
     private static String esType; 
+    private static JSONParser jsonParser = new JSONParser();
+    private static Long lineCounter = 0L;
     
     /**
      * @param args the command line arguments
@@ -70,6 +72,7 @@ public class ElasticSearchLoader {
                 System.out.println("** Bulk processing commencing for file: " + absoluteFilePath);
                 try (Stream<String> stream = Files.lines(Paths.get(absoluteFilePath))) {
                     BulkRequest bulkRequest = new BulkRequest();
+                    lineCounter = 0L;
                     stream.forEach(line -> loadJsonObject(bulkRequest, line));
                     if (bulkRequest.requests().size() > 0) {
                         BulkResponse bulkResponse = client.bulk(bulkRequest);
@@ -81,15 +84,20 @@ public class ElasticSearchLoader {
     }
     
     private static void loadJsonObject(BulkRequest bulkRequest, String line) {
+        ++lineCounter;
         if (line.isEmpty()) {
             return;
         }
         int firstCommaPosition = line.indexOf(','); // 9--daily, 7--monthly, 5--yearly
         String docId = line.substring(1, firstCommaPosition);
-        System.out.println("**** Adding JSON with the following docId to bulkRequest: " + docId);
         String jsonObject = line.substring(firstCommaPosition + 1, line.length() - 1);
-        bulkRequest.add(new IndexRequest(esIndex, esType, docId)  
-                .source(jsonObject, XContentType.JSON));
+        if (isValidJSON(jsonObject)) {
+            // System.out.println("**** Adding JSON with the following docId to bulkRequest: " + docId);
+            bulkRequest.add(new IndexRequest(esIndex, esType, docId)  
+                    .source(jsonObject, XContentType.JSON));
+        } else {
+            System.out.println("**** Invalid JSON encountered in input file, line: " + lineCounter);
+        }
     }
      
     private static void assessResponses(BulkResponse responses) {
@@ -116,4 +124,20 @@ public class ElasticSearchLoader {
         } catch (IOException ex) {}
         return fileNames;
     }
+    
+    
+    // the following from: https://stackoverflow.com/questions/10174898/how-to-check-whether-a-given-string-is-valid-json-in-java
+    
+    public static boolean isValidJSON(String test) {
+        try {
+            jsonParser.parse(test);
+        } catch (ParseException ex) {
+    //        try {
+    //            new JSONArray(test);
+    //        } catch (JSONException ex1) {
+    //            return false;
+    //        }
+        }
+        return true;
+    }    
 }
