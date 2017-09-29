@@ -73,7 +73,7 @@ public class ElasticSearchLoader {
                 try (Stream<String> stream = Files.lines(Paths.get(absoluteFilePath))) {
                     BulkRequest bulkRequest = new BulkRequest();
                     lineCounter = 0L;
-                    stream.forEach(line -> loadJsonObject(bulkRequest, line));
+                    stream.forEach(line -> loadJsonObject(bulkRequest, line, absoluteFilePath));
                     if (bulkRequest.requests().size() > 0) {
                         BulkResponse bulkResponse = client.bulk(bulkRequest);
                         assessResponses(bulkResponse);
@@ -83,7 +83,7 @@ public class ElasticSearchLoader {
         }
     }
     
-    private static void loadJsonObject(BulkRequest bulkRequest, String line) {
+    private static void loadJsonObject(BulkRequest bulkRequest, String line, String fileName) {
         ++lineCounter;
         if (line.isEmpty()) {
             return;
