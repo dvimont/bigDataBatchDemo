@@ -96,7 +96,8 @@ public class ElasticSearchLoader {
             bulkRequest.add(new IndexRequest(esIndex, esType, docId)  
                     .source(jsonObject, XContentType.JSON));
         } else {
-            System.out.println("**** Invalid JSON encountered in input file, line: " + lineCounter);
+            System.out.println("**** Invalid JSON encountered in input file: "
+                    + fileName + "line: " + lineCounter);
         }
     }
      
