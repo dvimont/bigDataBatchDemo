@@ -6,6 +6,7 @@ EXPORT_DIR=export
 
 rm -r ./$OUTPUT_NAME
 mkdir $OUTPUT_NAME
+rm ~/$EXPORT_DIR/*
 mkdir ~/$EXPORT_DIR
 
 echo "Extracting HDFS directory $INPUT_HDFS_DIR and compressing into file $OUTPUT_NAME.tar.gz" `date -u --rfc-822`

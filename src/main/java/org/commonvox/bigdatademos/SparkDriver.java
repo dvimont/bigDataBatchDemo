@@ -249,7 +249,6 @@ public class SparkDriver {
             }
             return new Tuple2(keyValuePair._1(), outputtedValue);
         }
-        
     }
     
     static class JsonMapper
@@ -263,10 +262,13 @@ public class SparkDriver {
             // Assemble TreeMap with most popular items up to size limit of POPULAR_PAGES_LIMIT
             //   Note that #groupByKey necessitates this because it can destroy the ordering from the sort
             itemMap = new TreeMap<>();
+            long itemCount = 0L;
             for (String value : keyValuePair._2()) {
+                ++itemCount;
                 // addEntry is passed (key == viewCount, value == complete record)
                 addEntry(value.substring(value.length() - 12), value);
             }
+            System.out.println("#### Number of items originally passed to JSONMapper in Iterable: " + itemCount);
             TreeMap<String, String> descendingMap = new TreeMap(Collections.reverseOrder());
             descendingMap.putAll(itemMap);
             
