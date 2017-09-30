@@ -206,6 +206,8 @@ public class SparkDriver {
                                 sourceFile, rawDataEntry, true)) {
                             String[] hourlyRecordComponents = rawDataEntry.split(" ");
                             String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
+                            // insert JSON escape char for all double-quotes in URL extensions
+                            String webpageExtension = hourlyRecordComponents[1].replaceAll("\"", "\\\\\"");
                             outputtedKey = yearMonthDayDomainCode + " " + hourlyRecordComponents[1];
                             outputtedValue = Integer.parseInt(hourlyRecordComponents[2]);
                         }

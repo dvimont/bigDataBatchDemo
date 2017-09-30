@@ -101,17 +101,18 @@ public class PageViewsDailyMapper
             }
             return false;
         }
-        if (rawDataEntry.contains("\"")) {
-            if (verboseMode) {
-                System.out.println(
-                        "** Encountered invalid entry CONTAINING QUOTE(s) in file <" + sourceFile
-                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
-            }
-            if (context != null) {
-                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_QUOTES).increment(1L);
-            }
-            return false;
-        }
+        // commented out 2017-09-30 -- double-quotes to be replace by \"
+//        if (rawDataEntry.contains("\"")) {
+//            if (verboseMode) {
+//                System.out.println(
+//                        "** Encountered invalid entry CONTAINING QUOTE(s) in file <" + sourceFile
+//                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+//            }
+//            if (context != null) {
+//                context.getCounter(PageViewsDaily.COUNTERS.CONTAINS_QUOTES).increment(1L);
+//            }
+//            return false;
+//        }
         String[] parsedData = rawDataEntry.split(" ");
         if (parsedData.length != 4) {
             if (verboseMode) {
