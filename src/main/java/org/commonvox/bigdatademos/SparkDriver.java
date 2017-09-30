@@ -44,7 +44,7 @@ import scala.Tuple2;
  */
 public class SparkDriver {
     
-//    private static int displayCount = 0;
+    // private static int displayCount = 0;
     private static final int POPULAR_PAGES_LIMIT = 500;
     private static final String DISCARD_INDICATOR = "&$";
     private static final DailyMapper DAILY_MAPPER = new DailyMapper();
@@ -66,7 +66,6 @@ public class SparkDriver {
           System.exit(-1);
         }
         String hdfsNamenode = args[0];
-        // HASH_PARTITIONER = new HashPartitioner(Integer.valueOf(args[1]));
         if (args[1].toUpperCase().equals("MEMDISK")) {
             MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
         } else if (args[1].toUpperCase().equals("DISK")) {
@@ -92,19 +91,12 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
-                        //   .partitionBy(HASH_PARTITIONER)
-                        // .persist(MASTER_PERSISTENCE_OPTION) // put back 9-24
-                        // reduce to daily view summary
-                        .reduceByKey((a, b) -> a + b)
-                        // filter out extremely low daily views
-                         .filter(tuple -> tuple._2() > 100) // filter moved to next section
+                        .reduceByKey((a, b) -> a + b)  // reduce to count of daily views
 ;
-        // pageViewsDaily.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile); // "test/pageviews.daily");        
         
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
-                        // filter out pages w/ small daily-views
-                        // .filter(tuple -> tuple._2() > 100) // -- commented out: filter done above
+                        .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,en Main_Page)
@@ -114,50 +106,18 @@ public class SparkDriver {
                         .mapToPair(new DiscardMapper(8))
                         // each partition will retain only its most popular!
                         .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
-                        .mapToPair(
-                            // new key is yyyymmdd (day)
+                        .mapToPair(   // new key is yyyymmdd (day)
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-                        .groupByKey()
+                        .groupByKey() // YES, groupByKey for denormalization!!
                         .mapToPair(new JsonMapper())
                 ;
         dailyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputDailyHdfsFile);
 
-// WEEKLY PROCESSING (PERMANENTLY?) REMOVED        
-//        JavaPairRDD<String, Integer> pageViewsWeekly = 
-//                pageViewsDaily.mapToPair(WEEKLY_MAPPER)
-//                      //  .partitionBy(HASH_PARTITIONER)
-//                        .reduceByKey((a, b) -> a + b);
-//        
-//        JavaPairRDD<String, String> weeklyPagesByPopularity =
-//                pageViewsWeekly
-//                        .filter(tuple -> tuple._2() > 100) // cull out low-ballers
-//                        .mapToPair(
-//                            // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
-//                            //   key,value example -->> (20160929000001871863,20160929en Main_Page)
-//                                // NOTE that in case of weekly data, date will always be a Sunday!!
-//                            tuple -> new Tuple2<>(
-//                                    tuple._1().substring(0, 8) + String.format("%012d", tuple._2()), tuple._1()))
-//                        .sortByKey(false)
-//                        .mapToPair(new CountingMapper(8))
-//                        .filter(tuple -> (Integer.valueOf(tuple._2().substring(0, 12)) <= POPULAR_PAGES_LIMIT))
-//                        .mapToPair(
-//                            // new key is yyyymmdd (a Sunday)
-//                            tuple -> new Tuple2<>(
-//                                    tuple._1().substring(0, 8), tuple._2() + tuple._1().substring(8)))
-//                        .groupByKey()
-//                        .mapToPair(CULLING_AGGREGATING_MAPPER)
-//                ;
-//        weeklyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputWeeklyHdfsFile);
-        
         System.out.println("Commencing MONTHLY processing");
         JavaPairRDD<String, Integer> pageViewsMonthly = 
                 pageViewsDaily.mapToPair(MONTHLY_MAPPER)
-                     //   .partitionBy(HASH_PARTITIONER)
-                     //   .persist(MASTER_PERSISTENCE_OPTION)
                         .reduceByKey((a, b) -> a + b);
-        
-        pageViewsDaily.unpersist(); // restored 9-24
         
         JavaPairRDD<String, String> monthlyPagesByPopularity =
                 pageViewsMonthly
@@ -168,24 +128,20 @@ public class SparkDriver {
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 6) + String.format("%012d", tuple._2()), tuple._1().substring(6)))
                         .sortByKey(false)
-                        // collapse next 2 into single filter if possible!!
                         .mapToPair(new DiscardMapper(6))
                         .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
                         // investigate collapsing the next two (or three) steps into a single #reduceByKey step
-                        .mapToPair(
-                            // new key is yyyymm
+                        .mapToPair(   // new key is yyyymm
                             tuple -> new Tuple2<String, String>(
                                     tuple._1().substring(0, 6), tuple._2() + tuple._1().substring(6)))
                         .groupByKey()
                         .mapToPair(new JsonMapper())
                 ;
-        
         monthlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputMonthlyHdfsFile);
         
         System.out.println("Commencing YEARLY processing");
         JavaPairRDD<String, Integer> pageViewsYearly = 
                 pageViewsMonthly.mapToPair(YEARLY_MAPPER)
-                    //    .partitionBy(HASH_PARTITIONER)
                         .reduceByKey((a, b) -> a + b);
         
         JavaPairRDD<String, String> yearlyPagesByPopularity =
@@ -199,8 +155,7 @@ public class SparkDriver {
                         .sortByKey(false)
                         .mapToPair(new DiscardMapper(4))
                         .filter(tuple -> (!tuple._2().startsWith(DISCARD_INDICATOR)))
-                        .mapToPair(
-                            // new key is yyyy
+                        .mapToPair(  // new key is yyyy
                             tuple -> new Tuple2<>(
                                     tuple._1().substring(0, 4), tuple._2() + tuple._1().substring(4)))
                         .groupByKey()
@@ -345,7 +300,7 @@ public class SparkDriver {
             //   Note that #groupByKey necessitates this because it can destroy the ordering from the sort
             itemMap = new TreeMap<>();
             for (String value : keyValuePair._2()) {
-                // addEntry passed (key == viewCount, value == complete record)
+                // addEntry is passed (key == viewCount, value == complete record)
                 addEntry(value.substring(value.length() - 12), value);
             }
             TreeMap<String, String> descendingMap = new TreeMap(Collections.reverseOrder());
@@ -355,9 +310,13 @@ public class SparkDriver {
             stringBuilder.append(SimpleJson.OBJECT_OPEN);
             stringBuilder.append(SimpleJson.nameValuePair("interval", keyValuePair._1()));
             stringBuilder.append(",");
+            // note that "date" has same value as "interval" but mapped to "date" field in ElasticSearch
+            stringBuilder.append(SimpleJson.nameValuePair("date", keyValuePair._1()));
+            stringBuilder.append(",");
             stringBuilder.append("\"topPages\":");
             stringBuilder.append(SimpleJson.ARRAY_OPEN);
             boolean pastFirstValue = false;
+            int rank = 0;
             for (Entry<String, String> entry : descendingMap.entrySet()) {
                 if (!pastFirstValue) {
                     pastFirstValue = true;
@@ -371,6 +330,10 @@ public class SparkDriver {
                 String pageUrlExtension = tokens[1].substring(0, tokens[1].length() - 12);
                 String viewsWithLeadingZeroes = tokens[1].substring(tokens[1].length() - 12);
                 String views = Integer.valueOf(viewsWithLeadingZeroes).toString();
+                
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "rank", String.valueOf(++rank)));
+                stringBuilder.append(",");
                 stringBuilder.append(SimpleJson.nameValuePair(
                         "pageId", pageId));
                 stringBuilder.append(",");
