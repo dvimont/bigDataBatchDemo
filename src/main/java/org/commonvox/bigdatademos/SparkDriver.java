@@ -91,9 +91,15 @@ public class SparkDriver {
         JavaPairRDD<String, Integer> pageViewsDaily =
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
+                        // key is [yearMonthDayDomainCode + " " + webpageExtension]
                         .reduceByKey((a, b) -> a + b)  // reduce to count of daily views
                         .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
-;
+                ;
+        
+        // TO DO: compute and output pageviewsByWebpage
+        // JavaPairRDD<String, String> pageviewsByWebpage;
+        //    key is [domainCode + " " + webpageExtension]
+        //    value is JSON list of all (date & viewCount-for-that-day) for the webpage
         
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
@@ -161,7 +167,6 @@ public class SparkDriver {
                         .groupByKey()
                         .mapToPair(new JsonMapper())
                 ;
-        
         yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
     }
@@ -208,7 +213,7 @@ public class SparkDriver {
                             String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
                             // insert JSON escape char for all double-quotes in URL extensions
                             String webpageExtension = hourlyRecordComponents[1].replaceAll("\"", "\\\\\"");
-                            outputtedKey = yearMonthDayDomainCode + " " + hourlyRecordComponents[1];
+                            outputtedKey = yearMonthDayDomainCode + " " + webpageExtension;
                             outputtedValue = Integer.parseInt(hourlyRecordComponents[2]);
                         }
                     } while (outputtedKey == null && keyValuePairs.hasNext());
