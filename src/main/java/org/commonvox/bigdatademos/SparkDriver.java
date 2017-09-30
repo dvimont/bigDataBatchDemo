@@ -92,11 +92,11 @@ public class SparkDriver {
                 hadoopRDD.mapPartitionsWithInputSplit(DAILY_MAPPER, true)
                         .mapToPair(tuple -> tuple)
                         .reduceByKey((a, b) -> a + b)  // reduce to count of daily views
+                        .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
 ;
         
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
-                        .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,en Main_Page)
@@ -244,49 +244,6 @@ public class SparkDriver {
         }
         
     }
-    
-//    static class FinalFormattingMapper
-//            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
-//        
-//        private TreeMap<String, String> itemMap;
-//        
-//        @Override
-//        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
-//                throws Exception {
-//            // Assemble TreeMap with most popular items up to size limit of POPULAR_PAGES_LIMIT
-//            //   Note that #groupByKey necessitates this because it can destroy the ordering from the sort
-//            itemMap = new TreeMap<>();
-//            for (String value : keyValuePair._2()) {
-//                // addEntry passed (key == viewCount, value == complete record)
-//                addEntry(value.substring(value.length() - 12), value);
-//            }
-//            TreeMap<String, String> descendingMap = new TreeMap(Collections.reverseOrder());
-//            descendingMap.putAll(itemMap);
-//            StringBuilder stringBuilder = new StringBuilder(VALUE_ARRAY_OPEN_TAG);
-//            boolean pastFirstValue = false;
-//            for (Entry<String, String> descendingMapEntry : descendingMap.entrySet()) {
-//                if (!pastFirstValue) {
-//                    pastFirstValue = true;
-//                } else {
-//                    stringBuilder.append(VALUE_ARRAY_DELIMITER);
-//                }
-//                stringBuilder.append(descendingMapEntry.getValue());
-//            }
-//            stringBuilder.append(VALUE_ARRAY_CLOSE_TAG);
-//            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
-//        }
-//        
-//        private void addEntry(String key, String value) {
-//          if (itemMap.size() < POPULAR_PAGES_LIMIT) {
-//            itemMap.put(key, value);
-//          } else {
-//            if (key.compareTo(itemMap.firstEntry().getKey()) > 0) {
-//              itemMap.pollFirstEntry(); // remove earliest entry
-//              itemMap.put(key, value);
-//            }
-//          }
-//        }
-//    }
     
     static class JsonMapper
             implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
