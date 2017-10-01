@@ -17,10 +17,13 @@ package org.commonvox.bigdatademos;
 
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -34,6 +37,10 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.storage.StorageLevel;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import scala.Tuple2;
 
 /**
@@ -56,7 +63,8 @@ public class SparkDriver {
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
     private static StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
-    
+    private static JSONParser jsonParser = new JSONParser();
+
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
           System.err.println(
@@ -76,6 +84,7 @@ public class SparkDriver {
         String outputWeeklyHdfsFile = args[4];
         String outputMonthlyHdfsFile = args[5];
         String outputYearlyHdfsFile = args[6];
+        String outputDailyViewsByPageHdfsFile = "/test/viewsByPage";
         
         System.out.println("Commencing DAILY processing");
         SparkConf conf = new SparkConf().setAppName("WikimediaPageViewsProcessing");
@@ -169,6 +178,44 @@ public class SparkDriver {
                 ;
         yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
         
+        // SPECIAL PROCESSING TO PRODUCE page -> date/views-array JSON docs
+        HashSet<String> completePageIdSet = new HashSet<>();
+        completePageIdSet.addAll(
+                getPageIdSet(dailyPagesByPopularity.collectAsMap()));
+        completePageIdSet.addAll(
+                getPageIdSet(monthlyPagesByPopularity.collectAsMap()));
+        completePageIdSet.addAll(
+                getPageIdSet(yearlyPagesByPopularity.collectAsMap()));
+        
+        JavaPairRDD<String, Integer> pageViewsDailyOfPopularPages
+                = pageViewsDaily.filter(
+                        tuple -> completePageIdSet.contains(tuple._1().substring(8)));
+        
+        JavaPairRDD<String, String> dailyViewsByPage =
+            pageViewsDailyOfPopularPages.mapToPair( // map to (pageId -> day/views)
+                                            // e.g. (en Main_Page, 20160929000001871863)
+                    tuple -> new Tuple2<>(tuple._1().substring(8),
+                            tuple._1().substring(0, 8) + String.format("%012d", tuple._2())))
+                    .groupByKey() // outputs (pageId -> array of day/views)
+                    .mapToPair(new JsonMapper2());               
+        dailyViewsByPage.saveAsTextFile(hdfsNamenode + outputDailyViewsByPageHdfsFile);
+
+    }
+    
+    static HashSet<String> getPageIdSet (Map<String,String> jsonMap)
+            throws ParseException {
+        HashSet<String> pageIdSet = new HashSet<>();
+        
+        for (Entry<String,String> jsonEntry : jsonMap.entrySet()) {
+            JSONObject doc = (JSONObject)jsonParser.parse(jsonEntry.getValue());
+            JSONArray topPages = (JSONArray) doc.get("topPages");
+            Iterator pagesIterator = topPages.iterator();
+            while (pagesIterator.hasNext()) {
+                JSONObject pageEntry = (JSONObject)pagesIterator.next();
+                pageIdSet.add(((JSONObject)pageEntry.get("pageId")).toString());
+            }           
+        }
+        return pageIdSet;
     }
     
     static class DailyMapper implements Function2<InputSplit,
@@ -268,7 +315,7 @@ public class SparkDriver {
                 // addEntry is passed (key == viewCount, value == complete record)
                 addEntry(value.substring(value.length() - 12), value);
             }
-            System.out.println("#### Number of items originally passed to JSONMapper in Iterable: " + itemCount);
+            // System.out.println("#### Number of items originally passed to JSONMapper in Iterable: " + itemCount);
             TreeMap<String, String> descendingMap = new TreeMap(Collections.reverseOrder());
             descendingMap.putAll(itemMap);
             
@@ -325,6 +372,53 @@ public class SparkDriver {
             }
           }
         }
+    }
+    static class JsonMapper2
+            implements PairFunction<Tuple2<String, Iterable<String>>, String, String> { 
+        
+        private TreeMap<String, String> itemMap;
+        
+        @Override
+        public Tuple2<String, String> call(Tuple2<String, Iterable<String>> keyValuePair)
+                throws Exception {
+            // Put Iterable items in order
+            TreeSet<String> dailyViewsSet = new TreeSet<>();
+            Iterator<String> dailyViewsIterator = keyValuePair._2().iterator();
+            while (dailyViewsIterator.hasNext()) {
+                dailyViewsSet.add(dailyViewsIterator.next());
+            }
+            // Build JSON
+            //    NOTE: key,value example -->> (en Main_Page, 20160929000001871863)
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(SimpleJson.OBJECT_OPEN);
+            stringBuilder.append(SimpleJson.nameValuePair("pageId", keyValuePair._1()));
+            stringBuilder.append(",");
+            stringBuilder.append("\"dailyViews\":");
+            stringBuilder.append(SimpleJson.ARRAY_OPEN);
+            boolean pastFirstValue = false;
+            for (String dailyViewsEntry : dailyViewsSet) {
+                if (!pastFirstValue) {
+                    pastFirstValue = true;
+                } else {
+                    stringBuilder.append(",");
+                }
+                stringBuilder.append(SimpleJson.OBJECT_OPEN);
+                String day = dailyViewsEntry.substring(0, 8);
+                String viewsWithLeadingZeroes = dailyViewsEntry.substring(8);
+                String views = Integer.valueOf(viewsWithLeadingZeroes).toString();
+                
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "day", day));
+                stringBuilder.append(",");
+                stringBuilder.append(SimpleJson.nameValuePair(
+                        "views", views));
+                stringBuilder.append(SimpleJson.OBJECT_CLOSE);
+            }
+            stringBuilder.append(SimpleJson.ARRAY_CLOSE);
+            stringBuilder.append(SimpleJson.OBJECT_CLOSE);
+            return new Tuple2(keyValuePair._1(), stringBuilder.toString());
+        }
+        
     }
     
     static class WeeklyMapper
