@@ -276,9 +276,6 @@ public class SparkDriver {
             stringBuilder.append(SimpleJson.OBJECT_OPEN);
             stringBuilder.append(SimpleJson.nameValuePair("interval", keyValuePair._1()));
             stringBuilder.append(",");
-            // note that "date" has same value as "interval" but mapped to "date" field in ElasticSearch
-            stringBuilder.append(SimpleJson.nameValuePair("date", keyValuePair._1()));
-            stringBuilder.append(",");
             stringBuilder.append("\"topPages\":");
             stringBuilder.append(SimpleJson.ARRAY_OPEN);
             boolean pastFirstValue = false;
