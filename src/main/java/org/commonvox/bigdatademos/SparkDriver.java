@@ -170,7 +170,6 @@ public class SparkDriver {
                         .mapToPair(new JsonMapper())
                 ;
         yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
-        
     }
     
     static class DailyMapper implements Function2<InputSplit,
