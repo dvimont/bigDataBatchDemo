@@ -1,8 +1,5 @@
 package org.commonvox.bigdatademos;
 
-
-import java.util.Collection;
-
 /*
  * Copyright 2017 Daniel Vimont.
  *

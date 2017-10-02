@@ -171,27 +171,6 @@ public class WikimediaFileDownloader {
         return targetPath;
     }
 
-//    private static void copyLocalFileToHDFS(Path localFilePath, Configuration conf)
-//            throws FileNotFoundException, IOException {
-//        //Input stream for the file in local file system to be written to HDFS
-//        InputStream in =
-//                new BufferedInputStream(new FileInputStream(localFilePath.toFile()));
-//        //Destination file in HDFS
-//        String targetHdfsFile = HDFS_RAW_DATA_DIRECTORY + localFilePath.getFileName();
-//        FileSystem fs = FileSystem.get(URI.create(targetHdfsFile), conf);
-//        org.apache.hadoop.fs.Path targetHdfsPath =
-//                new org.apache.hadoop.fs.Path(targetHdfsFile);
-//        // Set outputStream with 64MB blocks (Wikimedia files < 64MB)
-//        OutputStream outStream = fs.create(targetHdfsPath, true, 4096,
-//                (short)conf.getInt("dfs.replication", 3), 67108864);
-//        //Copy file from local to HDFS
-//        IOUtils.copyBytes(in, outStream, 4096, true);
-//        
-//        // NOTE that #moveFromLocalFile does not seem to allow control over blockSize
-//        //   fs.moveFromLocalFile( 
-//        //              new org.apache.hadoop.fs.Path(localFilePath.toUri()), targetHdfsPath);
-//    }
-//
     private static HttpsURLConnection getConnectionToServerWithBadSslCertificate(URL url)
             throws NoSuchAlgorithmException, KeyManagementException,
             MalformedURLException, IOException {
@@ -219,13 +198,6 @@ public class WikimediaFileDownloader {
         //   so get new SSL socket factory just for this instance!!
         conn.setSSLSocketFactory(ctx.getSocketFactory());
         conn.setHostnameVerifier((String paramString, SSLSession paramSSLSession) -> true);
-        // the above lambda expression derived from the old-school anonymous class coding as follows:
-        //        conn.setHostnameVerifier(new HostnameVerifier() {
-        //            @Override
-        //            public boolean verify(String paramString, SSLSession paramSSLSession) {
-        //                return true;
-        //            }
-        //        });
         conn.connect();
         return conn;
     }

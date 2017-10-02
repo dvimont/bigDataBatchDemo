@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.spark.SparkConf;
@@ -56,11 +57,12 @@ public class SparkDriver {
     public static final String VALUE_ARRAY_CLOSE_TAG = "]&]";
     public static final String VALUE_ARRAY_DELIMITER = "\n"; // line-feed delimiter mirrors original raw-data delimiter
     private static StorageLevel MASTER_PERSISTENCE_OPTION = StorageLevel.MEMORY_AND_DISK();
+    public enum COUNTERS { GOOD, BAD, CONTAINS_TABS, CONTAINS_QUOTES, NONINTEGER_COUNT_OF_VIEWS }
     
     public static void main( String[] args ) throws Exception {
         if (args.length < 7) {
           System.err.println(
-                  "Usage: PageViewsDaily <hdfs-master url> <storage-level> <input path> "
+                  "Usage: SparkDriver <hdfs-master url> <storage-level> <input path> "
                           + "<daily output path> <weekly output path> "
                           + "<monthly output path> <yearly output path>");
           System.exit(-1);
@@ -178,17 +180,11 @@ public class SparkDriver {
                 InputSplit inputSplit, Iterator<Tuple2<LongWritable, Text>> keyValuePairs)
                 throws Exception {
 
-//            System.out.println("DailyMapper processing is commencing!");
-
             // NOTE: Name of source file contains year-month-day string (yyyymmdd),
             // which will be prepended to the first two tokenized strings in each 
             // inputted record [domain code + webpage extension] to form outputtedKey
             final String sourceFile = ((FileSplit) inputSplit).getPath().getName();
-            // Filename contains yearMonthDay metadata.
             String yearMonthDay = sourceFile.substring(10, 18);
-            
-//            System.out.println("sourceFile is: " + sourceFile);
-//            System.out.println("yearMonthDay value is: " + yearMonthDay);
             
             return new Iterator<Tuple2<String, Integer>>() {
                 @Override
@@ -207,7 +203,7 @@ public class SparkDriver {
 
                         // Raw data entry format is space-delimited:
                         //   [domain code] + [webpage extension] + [pageviews] + [total response size]
-                        if (PageViewsDailyMapper.rawDataEntryIsValid(
+                        if (rawDataEntryIsValid(
                                 sourceFile, rawDataEntry, true)) {
                             String[] hourlyRecordComponents = rawDataEntry.split(" ");
                             String yearMonthDayDomainCode = yearMonthDay + hourlyRecordComponents[0];
@@ -383,5 +379,69 @@ public class SparkDriver {
             //   and keyValuePair._2 is the monthly count of views for the webpage.
             return new Tuple2(yearDomainCode + " " + monthlyKeyComponents[1], keyValuePair._2());
         }
-     }
+    }
+    
+    public static boolean rawDataEntryIsValid(
+            String sourceFile, String rawDataEntry, boolean verboseMode) {
+        return rawDataEntryIsValid(null, sourceFile, 0, rawDataEntry, true);
+    }
+    
+    public static boolean rawDataEntryIsValid(Mapper.Context context, String sourceFile,
+            long key, String rawDataEntry, boolean verboseMode) {
+        // 2017-09-20 decided to initially work only with English Wikimedia pages
+        // 2017-09-24 -- added space after "en" for only wikiPEDIA
+        //  see https://wikitech.wikimedia.org/wiki/Analytics/Data_Lake/Traffic/Pageviews
+        if (!rawDataEntry.startsWith("en ")) {
+            return false;
+        }
+        // Curious page with just hyphen as URL extension should be filtered out!
+        if (rawDataEntry.length() > 5 && rawDataEntry.substring(3, 5).equals("- ")) {
+            return false;
+        }
+        if (rawDataEntry.contains("\t")) {
+            if (verboseMode) {
+                System.out.println(
+                        "** Encountered invalid entry CONTAINING TAB(s) in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            }
+            if (context != null) {
+                context.getCounter(COUNTERS.CONTAINS_TABS).increment(1L);
+            }
+            return false;
+        }
+        String[] parsedData = rawDataEntry.split(" ");
+        if (parsedData.length != 4) {
+            if (verboseMode) {
+                System.out.println("** Encountered invalid entry WITH <" + parsedData.length
+                        + "> SPACE-DELIMITED ELEMENTS (expected 4) in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            }
+            return false;
+        }
+        if (!isIntegerValue(parsedData[2])) {
+            if (verboseMode) {
+                System.out.println("** Encountered invalid raw-data line WITH INVALID COUNT_VIEWS"
+                        + "VALUE OF <" + parsedData[2] + "> in file <" + sourceFile
+                        + ">, position <" + key + "> -- raw data entry: <" + rawDataEntry + ">");
+            }
+            if (context != null) {
+                context.getCounter(COUNTERS.NONINTEGER_COUNT_OF_VIEWS).increment(1L);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isIntegerValue(String validationString) {
+        if (validationString == null || validationString.isEmpty()) {
+            return false;
+        } else {
+            for (char c : validationString.toCharArray()) {
+                if (!Character.isDigit(c)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
