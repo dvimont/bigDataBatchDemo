@@ -10,7 +10,7 @@ This package consists of components used to complete the following sequence:
 * Execute Spark processing to generate daily, weekly, and yearly aggregations and output data on the 500 most popular sites for a given day, month, or year.
 * Load the summary data into ElasticSearch for indexing and to provide a basic public API, and also to offer graphical presentations on the data using Kibana.
 
-Command line execution of the processing sequence is as follows:
+### Command line execution of the processing sequence is as follows:
 1. **loadRemoteData** (downloads raw-data [gzipped] files from Wikimedia servers and loads into S3)  
    `./src/main/bin/loadRemoteData [processing-limit]`  
      e.g., `./src/main/bin/loadRemoteData 0`  
