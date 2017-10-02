@@ -40,20 +40,20 @@ public class SimpleJson {
                 .append(value).append("\"").toString();
     }
     
-    public static String array(Iterable<String> entries) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("[");
-        boolean pastFirst = false;
-        for (String entry : entries) {
-            if (!pastFirst) {
-                pastFirst = true;
-            } else {
-                stringBuilder.append(",");
-            }
-            stringBuilder.append(entry);
-        }
-        stringBuilder.append("]");
-        return stringBuilder.toString();
-    }
+//    public static String array(Iterable<String> entries) {
+//        StringBuilder stringBuilder = new StringBuilder();
+//        stringBuilder.append("[");
+//        boolean pastFirst = false;
+//        for (String entry : entries) {
+//            if (!pastFirst) {
+//                pastFirst = true;
+//            } else {
+//                stringBuilder.append(",");
+//            }
+//            stringBuilder.append(entry);
+//        }
+//        stringBuilder.append("]");
+//        return stringBuilder.toString();
+//    }
     
 }

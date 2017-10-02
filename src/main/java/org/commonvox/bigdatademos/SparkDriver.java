@@ -98,11 +98,13 @@ public class SparkDriver {
                         .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
                 ;
         
-        // TO DO: compute and output pageviewsByWebpage
-        // JavaPairRDD<String, String> pageviewsByWebpage;
-        //    key is [domainCode + " " + webpageExtension]
-        //    value is JSON list of all (date & viewCount-for-that-day) for the webpage
-        
+        // NOTE: the logic to create each of the *PagesByPopularity RDDs below is
+        //   quite similar, and arguably should be modularized to remove redundancy.
+        //   Currently, two considerations override that: (1) the wish to keep
+        //   the logic as "readable" as possible by those reviewing this code, and 
+        //   (2) the fact that this code is in "alpha" state, and as it evolves
+        //   into a more production-ready state, unique modifications may need to be
+        //   made to either daily, monthly, or weekly processing.
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
                         .mapToPair(
@@ -170,6 +172,11 @@ public class SparkDriver {
                         .mapToPair(new JsonMapper())
                 ;
         yearlyPagesByPopularity.saveAsTextFile(hdfsNamenode + outputYearlyHdfsFile);
+        
+        // TO DO: compute and output pageviewsByWebpage
+        // JavaPairRDD<String, String> pageviewsByWebpage;
+        //    key is [domainCode + " " + webpageExtension]
+        //    value is JSON array of all (date & viewCount-for-that-date) for the webpage
     }
     
     static class DailyMapper implements Function2<InputSplit,
