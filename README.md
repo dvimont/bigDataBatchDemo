@@ -1,7 +1,7 @@
 ## WikiTrends: Using Big Data tools to bring the Wikipedia data lake to life!
 
 ### Project overview:
-The WIKITRENDS project is all about giving data scientists and web developers easy access to aggregated trending data derived from Wikipedia’s public data lake. The biggest challenge was the quantity: it called for the aggregation and transformation of 3TB of Wikipedia hourly pageview data, ultimately to allow simple queries for the top 500 webpages on a given day, month, or year. The project uses S3 and Hadoop for data storage, Spark for aggregation & transformation, and ElasticSearch for a low-latency datastore and simple querying.
+The WIKITRENDS project is all about giving data scientists and web developers easy access to aggregated trending data derived from [Wikipedia’s public data lake](https://wikitech.wikimedia.org/wiki/Analytics/Data_Lake/Traffic/Pageviews). The biggest challenge was the quantity: it called for the aggregation and transformation of 3TB of Wikipedia hourly pageview data, ultimately to allow simple queries for the top 500 webpages on a given day, month, or year. The project uses S3 and Hadoop for data storage, Spark for aggregation & transformation, and ElasticSearch for a low-latency datastore and simple querying.
 
 This package consists of components used to complete the following sequence:
 * Download the complete set of pageviews (hourly summary files, 1TB compressed) from Wikimedia's servers and save the files to S3 (cold storage).
