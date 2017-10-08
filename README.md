@@ -34,3 +34,4 @@ This package consists of components used to complete the following sequence:
    `./src/main/bin/loadES [index] [type] [inputDirectory]`  
      e.g., `./src/main/bin/loadES popular-pages interval_type ~/import/xferToES/`
 
+<iframe width="1280" height="720" src="https://www.youtube.com/embed/yBw36dquUfw?rel=0" frameborder="0" allowfullscreen></iframe>
