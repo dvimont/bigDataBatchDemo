@@ -95,7 +95,7 @@ public class SparkDriver {
                         .mapToPair(tuple -> tuple)
                         // key is [yearMonthDayDomainCode + " " + webpageExtension]
                         .reduceByKey((a, b) -> a + b)  // reduce to count of daily views
-                        // .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
+                        .filter(tuple -> tuple._2() > 100) // filter out pages w/ small daily-views
                 ;
         
         // NOTE: the logic to create each of the *PagesByPopularity RDDs below is
@@ -107,7 +107,6 @@ public class SparkDriver {
         //   made to either daily, monthly, or weekly processing.
         JavaPairRDD<String, String> dailyPagesByPopularity =
                 pageViewsDaily
-                        .filter(tuple -> tuple._2() > 100) // moved here from above for test 20171009
                         .mapToPair(
                             // new key is yyyymmddnnnnnnnnn, where nnnnnnnnn is views
                             //   key,value example -->> (20160929000001871863,en Main_Page)
